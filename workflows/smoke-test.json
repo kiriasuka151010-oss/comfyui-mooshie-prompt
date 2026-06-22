@@ -1,112 +1,232 @@
 {
-  "last_node_id": 10,
-  "last_link_id": 20,
+  "last_node_id": 20,
+  "last_link_id": 40,
   "nodes": [
     {
       "id": 1,
       "type": "MooshieBrowser",
       "pos": [100, 100],
-      "size": [300, 80],
+      "size": [600, 900],
       "flags": {},
       "order": 0,
       "mode": 0,
       "inputs": [],
-      "outputs": [{"name": "artist_tag", "type": "STRING", "links": [1]}],
+      "outputs": [{"name": "tag", "type": "STRING", "links": [1]}],
       "properties": {"Node name for S&R": "MooshieBrowser"},
-      "widgets_values": ["@piromizu"]
+      "widgets_values": [""],
+      "color": "#223", "bgcolor": "#335"
     },
     {
       "id": 2,
-      "type": "DanbooruTagSplitter",
-      "pos": [450, 100],
-      "size": [340, 120],
-      "flags": {},
+      "type": "DanbooruBrowser",
+      "pos": [750, 100],
+      "size": [500, 400],
+      "flags": {"collapsed": false},
       "order": 1,
       "mode": 0,
       "inputs": [
-        {"name": "artist_tag", "type": "STRING", "link": 1}
+        {"name": "来自AnimaDex", "type": "STRING", "link": 1}
       ],
       "outputs": [
-        {"name": "character_tags", "type": "STRING", "links": [2]},
-        {"name": "artist_tags", "type": "STRING", "links": [3]},
-        {"name": "pose_tags", "type": "STRING", "links": [4]},
-        {"name": "all_tags", "type": "STRING", "links": []},
-        {"name": "preview_image", "type": "IMAGE", "links": [10]}
+        {"name": "image", "type": "IMAGE", "links": []},
+        {"name": "全部标签", "type": "STRING", "links": []},
+        {"name": "质量/元标签", "type": "STRING", "links": []},
+        {"name": "数量标签", "type": "STRING", "links": []},
+        {"name": "角色标签", "type": "STRING", "links": [4]},
+        {"name": "系列标签", "type": "STRING", "links": []},
+        {"name": "画师标签", "type": "STRING", "links": [6]},
+        {"name": "常规标签", "type": "STRING", "links": [7]},
+        {"name": "未分类标签", "type": "STRING", "links": []}
       ],
-      "properties": {"Node name for S&R": "DanbooruTagSplitter"},
-      "widgets_values": ["@piromizu", 0]
+      "properties": {"Node name for S&R": "DanbooruBrowser"},
+      "widgets_values": ["{}", "{}", "{}", ""],
+      "color": "#223", "bgcolor": "#335"
     },
     {
-      "id": 3,
-      "type": "PreviewImage",
-      "pos": [450, 280],
-      "size": [300, 300],
+      "id": 8,
+      "type": "EditablePrompt",
+      "pos": [1350, 100],
+      "size": [450, 350],
       "flags": {},
       "order": 2,
       "mode": 0,
-      "inputs": [{"name": "images", "type": "IMAGE", "link": 10}],
-      "outputs": [],
-      "properties": {"Node name for S&R": "PreviewImage"},
-      "widgets_values": []
+      "inputs": [
+        {"name": "upstream_artist", "type": "STRING", "link": 6},
+        {"name": "upstream_character", "type": "STRING", "link": 4},
+        {"name": "upstream_general", "type": "STRING", "link": 7}
+      ],
+      "outputs": [
+        {"name": "prompt", "type": "STRING", "links": [13]},
+        {"name": "preview", "type": "STRING", "links": [15]}
+      ],
+      "properties": {"Node name for S&R": "EditablePrompt"},
+      "widgets_values": ["upstream",
+        "masterpiece, best quality, score_9, year 2025, highres, official art, sensitive",
+        "", "", ""],
+      "title": "EditablePrompt — 分段可编辑"
     },
     {
-      "id": 4,
-      "type": "AnimaPromptBuilder",
-      "pos": [850, 100],
-      "size": [340, 120],
+      "id": 9,
+      "type": "PreviewAny",
+      "pos": [1850, 100],
+      "size": [500, 100],
       "flags": {},
       "order": 3,
       "mode": 0,
-      "inputs": [
-        {"name": "character_tags", "type": "STRING", "link": 2},
-        {"name": "artist_tags", "type": "STRING", "link": 3},
-        {"name": "pose_tags", "type": "STRING", "link": 4}
-      ],
-      "outputs": [{"name": "prompt", "type": "STRING", "links": [5]}],
-      "properties": {"Node name for S&R": "AnimaPromptBuilder"},
-      "widgets_values": ["masterpiece, best quality, score_9, year 2025, highres, official art, sensitive"]
+      "inputs": [{"name": "source", "type": "*", "link": 15}],
+      "outputs": [],
+      "properties": {"Node name for S&R": "PreviewAny"},
+      "title": "Preview — 预览最终 Prompt"
     },
     {
-      "id": 5,
-      "type": "EditablePrompt",
-      "pos": [1250, 100],
-      "size": [400, 160],
+      "id": 10,
+      "type": "CLIPTextEncode",
+      "pos": [1850, 250],
+      "size": [400, 200],
       "flags": {},
       "order": 4,
       "mode": 0,
       "inputs": [
-        {"name": "upstream_prompt", "type": "STRING", "link": 5}
+        {"name": "clip", "type": "CLIP", "link": 20},
+        {"name": "text", "type": "STRING", "link": 13}
       ],
-      "outputs": [{"name": "prompt", "type": "STRING", "links": [6]}],
-      "properties": {"Node name for S&R": "EditablePrompt"},
-      "widgets_values": ["", "upstream"]
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [21]}],
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": [""],
+      "title": "正面"
     },
     {
-      "id": 6,
-      "type": "PreviewAny",
-      "pos": [1700, 100],
-      "size": [500, 160],
+      "id": 11,
+      "type": "CLIPTextEncode",
+      "pos": [1850, 500],
+      "size": [400, 200],
       "flags": {},
       "order": 5,
       "mode": 0,
-      "inputs": [{"name": "source", "type": "*", "link": 6}],
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 20}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [22]}],
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "widgets_values": ["worst quality, low quality, blurry, jpeg artifacts, text, watermark"],
+      "title": "负面"
+    },
+    {
+      "id": 12,
+      "type": "UNETLoader",
+      "pos": [100, 750],
+      "size": [270, 82],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "MODEL", "type": "MODEL", "links": [30]}],
+      "properties": {"Node name for S&R": "UNETLoader"},
+      "widgets_values": ["anima_baseV10.safetensors", "default"]
+    },
+    {
+      "id": 13,
+      "type": "CLIPLoader",
+      "pos": [100, 880],
+      "size": [270, 106],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "CLIP", "type": "CLIP", "links": [20]}],
+      "properties": {"Node name for S&R": "CLIPLoader"},
+      "widgets_values": ["qwen_3_06b_base.safetensors", "stable_diffusion", "default"]
+    },
+    {
+      "id": 14,
+      "type": "VAELoader",
+      "pos": [100, 1030],
+      "size": [270, 58],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "VAE", "type": "VAE", "links": [31]}],
+      "properties": {"Node name for S&R": "VAELoader"},
+      "widgets_values": ["qwen_image_vae.safetensors"]
+    },
+    {
+      "id": 15,
+      "type": "EmptyLatentImage",
+      "pos": [100, 1130],
+      "size": [270, 106],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "LATENT", "type": "LATENT", "links": [32]}],
+      "properties": {"Node name for S&R": "EmptyLatentImage"},
+      "widgets_values": [768, 1536, 1]
+    },
+    {
+      "id": 16,
+      "type": "KSampler",
+      "pos": [2350, 250],
+      "size": [270, 260],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 30},
+        {"name": "positive", "type": "CONDITIONING", "link": 21},
+        {"name": "negative", "type": "CONDITIONING", "link": 22},
+        {"name": "latent_image", "type": "LATENT", "link": 32}
+      ],
+      "outputs": [{"name": "LATENT", "type": "LATENT", "links": [33]}],
+      "properties": {"Node name for S&R": "KSampler"},
+      "widgets_values": [42, "randomize", 8, 0.7, "euler", "simple", 1]
+    },
+    {
+      "id": 17,
+      "type": "VAEDecode",
+      "pos": [2700, 250],
+      "size": [140, 46],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 33},
+        {"name": "vae", "type": "VAE", "link": 31}
+      ],
+      "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": [34]}],
+      "properties": {"Node name for S&R": "VAEDecode"}
+    },
+    {
+      "id": 18,
+      "type": "SaveImage",
+      "pos": [2900, 250],
+      "size": [300, 300],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [{"name": "images", "type": "IMAGE", "link": 34}],
       "outputs": [],
-      "properties": {"Node name for S&R": "PreviewAny"},
-      "widgets_values": [],
-      "title": "最终 Prompt"
+      "properties": {"Node name for S&R": "SaveImage"},
+      "widgets_values": ["mooshie_test"]
     }
   ],
   "links": [
-    [1, 1, 0, 2, 0, "STRING"],
-    [2, 2, 0, 4, 0, "STRING"],
-    [3, 2, 1, 4, 1, "STRING"],
-    [4, 2, 2, 4, 2, "STRING"],
-    [5, 4, 0, 5, 1, "STRING"],
-    [6, 5, 0, 6, 0, "STRING"],
-    [10, 2, 4, 3, 0, "IMAGE"]
+    [1, 1, 0, 2, 4, "STRING"],
+    [4, 2, 4, 8, 3, "STRING"],
+    [6, 2, 6, 8, 2, "STRING"],
+    [7, 2, 7, 8, 4, "STRING"],
+    [13, 8, 0, 10, 1, "STRING"],
+    [15, 8, 1, 9, 0, "*"],
+    [20, 13, 0, 10, 0, "CLIP"],
+    [20, 13, 0, 11, 0, "CLIP"],
+    [21, 10, 0, 16, 1, "CONDITIONING"],
+    [22, 11, 0, 16, 2, "CONDITIONING"],
+    [30, 12, 0, 16, 0, "MODEL"],
+    [31, 14, 0, 17, 1, "VAE"],
+    [32, 15, 0, 16, 3, "LATENT"],
+    [33, 16, 0, 17, 0, "LATENT"],
+    [34, 17, 0, 18, 0, "IMAGE"]
   ],
-  "groups": [],
+  "groups": [{"id": 1, "title": "Mooshie → D站 → EditablePrompt 分段编辑", "bounding": [80, 60, 3500, 1300], "color": "#3f789e", "font_size": 24}],
   "config": {},
-  "extra": {"ds": {"scale": 0.7, "offset": [100, 100]}},
+  "extra": {},
   "version": 0.4
 }

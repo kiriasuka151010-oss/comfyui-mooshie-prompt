@@ -1,15 +1,21 @@
 # ComfyUI Mooshie Prompt
 
-> 简化版 D 站 Prompt Pipeline — 艺术家浏览 → 标签拆分 → Prompt 构建 → 手动微调
+> 轻量增量 — 在 ComfyUI-Danbooru-Anima-Prompt 原版节点基础上，加 EditablePrompt
 
-## 四个节点
+## 依赖
 
-| 节点 | 作用 | 输入 | 输出 |
-|------|------|------|------|
-| **MooshieBrowser** | 从 Mooshieblob 画廊选艺术家 | — | `@artist_tag` |
-| **DanbooruTagSplitter** | 拉 D 站图片，拆分标签 | artist_tag | 角色/画师/姿势 + 预览图 |
-| **AnimaPromptBuilder** | 组装 Anima 格式 prompt | 角色/画师/姿势 | prompt 字符串 |
-| **EditablePrompt** | 开关切换自动/手动 prompt | prompt + 手动文本 | 最终 prompt |
+必须先安装 [ComfyUI-Danbooru-Anima-Prompt](https://github.com/...)。
+
+本插件不重复打包原版节点，直接从原版导入。
+
+## 节点
+
+| 节点 | 来源 | 作用 |
+|------|------|------|
+| **AnimaDexBrowser** | 原版 | 浏览 AnimaDex 画廊，选角色/画师，看图选风格 |
+| **DanbooruBrowser** | 原版 | 拉 D 站图片，拆分标签，浏览搜索 |
+| **AnimaPromptConverter** | 原版 | 组装 Anima 格式 prompt |
+| **EditablePrompt** | 🆕 本插件 | 开关切换自动/手动 prompt，上游来的自动透传，切手动自由编辑 |
 
 ## 安装
 
@@ -18,16 +24,19 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/kiriasuka151010-oss/comfyui-mooshie-prompt.git
 ```
 
-重启 ComfyUI，在节点菜单中找到 `mooshie` 分类。
+**前提：** 已安装 `ComfyUI-Danbooru-Anima-Prompt` 原版插件。
+
+重启 ComfyUI，在节点菜单找到 `mooshie` 分类下的 EditablePrompt。
 
 ## 工作流
 
 ```
-MooshieBrowser → DanbooruTagSplitter → AnimaPromptBuilder → EditablePrompt → CLIPTextEncode
+AnimaDexBrowser → DanbooruBrowser → AnimaPromptConverter → EditablePrompt → CLIPTextEncode
 ```
 
-拖入 `workflows/smoke-test.json` 测试。
+- **自动模式：** 上游 prompt 直接透传，不受干扰
+- **手动模式：** 切换到手动，自由编辑 prompt 文本
 
-## 与 Batch Debug 配合
+## 为什么是轻量增量
 
-EditablePrompt 输出接 CLIPTextEncode → BatchDebugExecute（conditioning 模式），即可批量对比不同 LoRA/CFG 参数。
+原版插件的画廊浏览、图片搜索、LLM 模糊搜索等功能完整保留。本插件只加一个 EditablePrompt，不做重复工作。
