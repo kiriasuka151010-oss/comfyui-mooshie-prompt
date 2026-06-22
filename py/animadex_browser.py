@@ -85,9 +85,9 @@ class MooshieBrowser:
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING", "STRING")
+    RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("artist_tag", "artist_tags", "char_tags", "general_tags",
-                    "series_tags", "meta_tags")
+                    "series_tags", "meta_tags", "tag_data")
     FUNCTION = "browse"
     CATEGORY = "mooshie"
 
@@ -106,6 +106,13 @@ class MooshieBrowser:
         if post_id:
             post = _get_post_from_danbooru(post_id)
             if post:
+                tag_data = json.dumps({
+                    "artist": post.get("tag_string_artist", ""),
+                    "character": post.get("tag_string_character", ""),
+                    "series": post.get("tag_string_copyright", ""),
+                    "general": post.get("tag_string_general", ""),
+                    "meta": post.get("tag_string_meta", ""),
+                })
                 return (
                     artist_tag,
                     post.get("tag_string_artist", ""),
@@ -113,9 +120,10 @@ class MooshieBrowser:
                     post.get("tag_string_general", ""),
                     post.get("tag_string_copyright", ""),
                     post.get("tag_string_meta", ""),
+                    tag_data,
                 )
 
-        return (artist_tag, "", "", "", "", "")
+        return (artist_tag, "", "", "", "", "", "{}")
 
 
 # ── API 路由 ──

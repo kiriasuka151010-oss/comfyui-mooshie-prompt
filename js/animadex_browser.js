@@ -303,17 +303,21 @@ app.registerExtension({
                 try {
                     const r = await fetch(`/mooshie/post/${p.id}`); const d = await r.json();
                     if (!d.success) { box.innerHTML = '<div style="text-align:center;color:#e94560;">加载失败</div>'; return; }
-                    const cls = d.classified || {};
-                    const all = cls.all || [];
-                    let html = `<div style="font-weight:bold;color:#e94560;font-size:14px;margin-bottom:8px;">📋 D站 #${p.id} · ${all.length} 标签</div>`;
+                    const post = d.post || {};
+                    let total = 0;
+                    let html = `<div style="font-weight:bold;color:#e94560;font-size:14px;margin-bottom:8px;">📋 D站 #${p.id} · ${d.total_tags || 0} 标签</div>`;
                     const cats = [
-                        ["quality_meta","质量/元","#ff6b6b"],
-                        ["count","数量","#ffd93d"],
-                        ["general","常规","#a0a0a0"]
+                        ["meta",       "质量/元", "#ff6b6b"],
+                        ["artist",     "画师",   "#ff6ec7"],
+                        ["character",  "角色",   "#6bcb77"],
+                        ["series",     "系列",   "#4d96ff"],
+                        ["general",    "常规",   "#a0a0a0"],
                     ];
                     for (const [key, label, color] of cats) {
-                        const tags = cls[key] || [];
+                        const raw = (post["tag_string_"+key] || "").trim();
+                        const tags = raw ? raw.split(/,\s*/).filter(Boolean) : [];
                         if (!tags.length) continue;
+                        total += tags.length;
                         html += `<div style="margin:6px 0;"><span style="background:${color}22;color:${color};padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;">${label}</span> `;
                         for (const tg of tags) {
                             html += `<span class="ms-tag" data-tag="${esc(tg)}" style="cursor:pointer;display:inline-block;margin:2px 4px;color:#b0bec5;" title="搜索 '${esc(tg)}'">${esc(tg)}</span>`;
@@ -323,7 +327,6 @@ app.registerExtension({
                     html += `<div style="text-align:center;margin-top:10px;color:#888;font-size:11px;">🖱️ 点击 tag 搜索 | ✕ 点击外部关闭</div>`;
                     box.innerHTML = html;
 
-                    // tag 点击 → 搜索
                     box.querySelectorAll(".ms-tag").forEach(el => {
                         el.onclick = () => {
                             dInp.value = el.dataset.tag; ov.remove();

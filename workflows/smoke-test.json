@@ -13,11 +13,12 @@
       "inputs": [],
       "outputs": [
         {"name": "artist_tag", "type": "STRING", "links": []},
-        {"name": "artist_tags", "type": "STRING", "links": [6]},
+        {"name": "artist_tags", "type": "STRING", "links": []},
         {"name": "char_tags", "type": "STRING", "links": []},
-        {"name": "general_tags", "type": "STRING", "links": [7]},
+        {"name": "general_tags", "type": "STRING", "links": []},
         {"name": "series_tags", "type": "STRING", "links": []},
-        {"name": "meta_tags", "type": "STRING", "links": []}
+        {"name": "meta_tags", "type": "STRING", "links": []},
+        {"name": "tag_data", "type": "STRING", "links": [1]}
       ],
       "properties": {"Node name for S&R": "MooshieBrowser"},
       "widgets_values": ["", "{}"],
@@ -27,23 +28,23 @@
       "id": 8,
       "type": "EditablePrompt",
       "pos": [1000, 100],
-      "size": [450, 350],
+      "size": [450, 400],
       "flags": {},
       "order": 1,
       "mode": 0,
       "inputs": [
-        {"name": "upstream_artist", "type": "STRING", "link": 6},
-        {"name": "upstream_general", "type": "STRING", "link": 7}
+        {"name": "upstream_data", "type": "STRING", "link": 1}
       ],
       "outputs": [
         {"name": "prompt", "type": "STRING", "links": [13]},
         {"name": "preview", "type": "STRING", "links": [15]}
       ],
       "properties": {"Node name for S&R": "EditablePrompt"},
-      "widgets_values": ["upstream",
+      "widgets_values": [
         "masterpiece, best quality, score_9, year 2025, highres, official art, sensitive",
-        "", "", ""],
-      "title": "EditablePrompt"
+        "", "", "", "", ""
+      ],
+      "title": "EditablePrompt — 逐类锁/跟"
     },
     {
       "id": 9,
@@ -55,7 +56,7 @@
       "mode": 0,
       "inputs": [{"name": "source", "type": "*", "link": 15}],
       "outputs": [],
-      "title": "Preview — 预览 Prompt"
+      "title": "Preview"
     },
     {
       "id": 10,
@@ -179,8 +180,7 @@
     }
   ],
   "links": [
-    [6, 1, 1, 8, 2, "STRING"],
-    [7, 1, 3, 8, 4, "STRING"],
+    [1, 1, 6, 8, 2, "STRING"],
     [13, 8, 0, 10, 1, "STRING"],
     [15, 8, 1, 9, 0, "*"],
     [20, 13, 0, 10, 0, "CLIP"],
@@ -193,7 +193,7 @@
     [33, 16, 0, 17, 0, "LATENT"],
     [34, 17, 0, 18, 0, "IMAGE"]
   ],
-  "groups": [{"id":1,"title":"Mooshie → EditablePrompt → 出图","bounding":[80,60,3000,1400],"color":"#3f789e","font_size":24}],
+  "groups": [{"id":1,"title":"Mooshie → EditablePrompt (单根线)","bounding":[80,60,3000,1400],"color":"#3f789e","font_size":24}],
   "config": {},
   "extra": {},
   "version": 0.4
