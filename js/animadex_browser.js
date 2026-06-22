@@ -9,272 +9,275 @@ app.registerExtension({
         const onCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             onCreated?.apply(this, arguments);
-            this.setSize([800, 750]);
-            this.title = "Mooshie 艺术家浏览器 (Mooshie Browser)";
-            this.onDrawBackground = function() {
-                const el = this.nodeEl?.querySelector?.(".comfy-title");
-                if (el && el.style.fontSize !== "16px") {
-                    el.style.fontSize = "16px";
-                    el.style.fontWeight = "bold";
-                }
-            };
+            this.setSize([800, 1000]);
+            this.title = "Mooshie 画师 + D站 (Mooshie Browser)";
             this.isChanged = true;
             const node = this;
 
-            // ── _tag widget ──
+            // ── widgets ──
             const tagW = node.widgets?.find(w => w.name === "_tag");
             if (tagW) { tagW.computeSize = () => [0.1, 20]; tagW.serialize = true; }
+            const selW = node.widgets?.find(w => w.name === "selection_data");
+            if (selW) { selW.computeSize = () => [0.1, 20]; selW.serialize = true; }
 
+            // ── state ──
             let sortMode = "count";
-            let results = [];
-            let page = 1;
-            let totalResults = 0;
+            let artists = [];
+            let artistPage = 1;
+            let artistTotal = 0;
+            let posts = [];
+            let selectedPost = null;
+            let selectedArtist = null;
             let _searchTimer = null;
 
-            const el = document.createElement("div");
-            el.style.cssText = "width:100%;height:100%;display:flex;flex-direction:column;background:#1a1a2e;border-radius:6px;min-height:0;";
+            const root = document.createElement("div");
+            root.style.cssText = "width:100%;height:100%;display:flex;flex-direction:column;background:#1a1a2e;border-radius:6px;min-height:0;";
 
-            // ── 顶栏 ──
-            const bar = document.createElement("div");
-            bar.style.cssText = "display:flex;gap:6px;padding:8px;align-items:center;border-bottom:1px solid #0f3460;flex-shrink:0;";
+            // ═══════════════════════════════════════════
+            //  上半：画师浏览
+            // ═══════════════════════════════════════════
 
-            // 排序按钮
+            const topPanel = document.createElement("div");
+            topPanel.style.cssText = "flex:0 0 auto;display:flex;flex-direction:column;border-bottom:2px solid #e94560;";
+
+            // 顶栏
+            const topBar = document.createElement("div");
+            topBar.style.cssText = "display:flex;gap:6px;padding:8px;align-items:center;flex-shrink:0;";
+            topBar.innerHTML = '<span style="color:#e94560;font-weight:bold;font-size:13px;">🎨 画师浏览</span>';
+            topBar.style.cssText += "border-bottom:1px solid #0f3460;";
+
             const sortBtns = {};
-            for (const [sk, sl] of [["count","🔥 热门"],["fav_count","❤️ 最多喜欢"],["random","🔀 随机"]]) {
+            for (const [sk, sl] of [["count","🔥"],["fav_count","❤️"],["random","🔀"]]) {
                 const sb = document.createElement("button");
                 sb.textContent = sl;
-                sb.style.cssText = `padding:5px 8px;border-radius:4px;border:none;cursor:pointer;font-size:11px;background:${sk===sortMode?"#0f3460":"transparent"};color:${sk===sortMode?"#4fc3f7":"#888"};`;
+                sb.title = sk==="count"?"热门":sk==="fav_count"?"最多喜欢":"随机";
+                sb.style.cssText = `padding:3px 6px;border-radius:3px;border:none;cursor:pointer;font-size:11px;background:${sk===sortMode?"#e94560":"#2a2a3a"};color:${sk===sortMode?"#fff":"#888"};`;
                 sb.onclick = () => {
-                    sortMode = sk;
-                    page = 1;
-                    for (const [k,v] of Object.entries(sortBtns)) { v.style.background = k===sortMode?"#0f3460":"transparent"; v.style.color = k===sortMode?"#4fc3f7":"#888"; }
-                    if (inp.value.trim()) { clearTimeout(_searchTimer); search(); }
-                    else doSearch("");
+                    sortMode = sk; artistPage = 1;
+                    for (const [k,v] of Object.entries(sortBtns)) { v.style.background = k===sortMode?"#e94560":"#2a2a3a"; v.style.color = k===sortMode?"#fff":"#888"; }
+                    loadArtists();
                 };
                 sortBtns[sk] = sb;
-                bar.appendChild(sb);
+                topBar.appendChild(sb);
             }
 
             const inp = document.createElement("input");
-            inp.type = "text";
-            inp.placeholder = "搜索画师名...";
-            inp.style.cssText = "flex:1;padding:6px 10px;border-radius:4px;border:1px solid #0f3460;background:#16213e;color:#e0e0e0;font-size:13px;outline:none;";
-
-            // 自动补全
-            const acList = document.createElement("div");
-            acList.style.cssText = "display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid #0f3460;border-radius:0 0 4px 4px;max-height:240px;overflow-y:auto;z-index:999;";
-            bar.style.position = "relative";
-            let _acTimer = null;
-
-            function showAc(items) {
-                acList.innerHTML = "";
-                if (!items || !items.length) { acList.style.display = "none"; return; }
-                for (const r of items) {
-                    const row = document.createElement("div");
-                    const name = r.name || "";
-                    row.style.cssText = "padding:5px 8px;cursor:pointer;color:#b0bec5;font-size:12px;border-bottom:1px solid #0f3460;display:flex;gap:6px;align-items:center;";
-                    row.onmouseover = () => row.style.background = "#0d2137";
-                    row.onmouseout = () => row.style.background = "transparent";
-                    row.onclick = () => {
-                        inp.value = name;
-                        acList.style.display = "none";
-                        page = 1;
-                        doSearch(name);
-                    };
-                    const nm = document.createElement("span");
-                    nm.textContent = name;
-                    nm.style.cssText = "font-weight:bold;color:#e0e0e0;font-size:12px;";
-                    row.appendChild(nm);
-                    acList.appendChild(row);
-                }
-                acList.style.display = "block";
-            }
-
-            inp.oninput = () => {
-                const q = inp.value.trim();
-                if (!q) { acList.style.display = "none"; clearTimeout(_searchTimer); return; }
-                clearTimeout(_acTimer);
-                _acTimer = setTimeout(async () => {
-                    acList.innerHTML = '<div style="padding:8px;text-align:center;color:#666;font-size:11px;">⏳ 搜索建议...</div>';
-                    acList.style.display = "block";
-                    try {
-                        const r = await fetch("/mooshie/search", {
-                            method: "POST", headers: {"Content-Type":"application/json"},
-                            body: JSON.stringify({mode:"artists", query: q, page: 1}),
-                        });
-                        const d = await r.json();
-                        showAc((d.results || []).slice(0, 10));
-                    } catch { acList.style.display = "none"; }
-                }, 150);
-            };
-            inp.onkeydown = (e) => {
-                if (e.key === "Enter") { acList.style.display = "none"; clearTimeout(_searchTimer); search(); }
-                if (e.key === "Escape") acList.style.display = "none";
-            };
-            inp.onblur = () => setTimeout(() => acList.style.display = "none", 200);
+            inp.type = "text"; inp.placeholder = "搜索画师...";
+            inp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #0f3460;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
+            inp.onkeydown = (e) => { if (e.key === "Enter") { artistPage = 1; loadArtists(); } };
 
             const sBtn = document.createElement("button");
-            sBtn.textContent = "🔍";
-            sBtn.style.cssText = "padding:5px 14px;border-radius:4px;border:none;background:#e94560;color:#fff;cursor:pointer;font-size:16px;";
-            sBtn.onclick = search;
-            bar.append(inp, acList, sBtn);
+            sBtn.textContent = "🔍"; sBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#e94560;color:#fff;cursor:pointer;font-size:14px;";
+            sBtn.onclick = () => { artistPage = 1; loadArtists(); };
+            topBar.append(inp, sBtn);
 
-            // ── 提示栏 ──
-            const hint = document.createElement("div");
-            hint.style.cssText = "padding:4px 10px;font-size:11px;color:#888;border-bottom:1px solid #0f3460;flex-shrink:0;";
-            hint.textContent = "💡 点击卡片选中 → 输出 @artist_tag → 直连 D站搜索";
+            // 画师网格
+            const artistGrid = document.createElement("div");
+            artistGrid.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;padding:6px;overflow-y:auto;max-height:280px;align-content:flex-start;";
 
-            // ── 网格 ──
-            const grid = document.createElement("div");
-            grid.style.cssText = "flex:1;min-height:0;overflow-y:auto;padding:6px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;";
+            // 画师翻页
+            const artistPageBar = document.createElement("div");
+            artistPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
 
-            // ── 翻页栏 ──
-            const pageBar = document.createElement("div");
-            pageBar.style.cssText = "display:none;justify-content:center;align-items:center;gap:8px;padding:6px 8px;border-top:1px solid #0f3460;flex-shrink:0;font-size:12px;";
+            topPanel.append(topBar, artistGrid, artistPageBar);
+            root.appendChild(topPanel);
 
-            function goPage(p) {
-                page = p;
-                const q = inp.value.trim();
-                doSearch(q);
+            // ═══════════════════════════════════════════
+            //  下半：D站画廊
+            // ═══════════════════════════════════════════
+
+            const bottomPanel = document.createElement("div");
+            bottomPanel.style.cssText = "flex:1;display:flex;flex-direction:column;min-height:0;";
+
+            const bottomBar = document.createElement("div");
+            bottomBar.style.cssText = "display:flex;gap:8px;padding:6px 8px;align-items:center;border-bottom:1px solid #0f3460;flex-shrink:0;";
+            bottomBar.innerHTML = '<span style="color:#4fc3f7;font-weight:bold;font-size:13px;">📋 D站画廊</span>';
+
+            const dstatus = document.createElement("span");
+            dstatus.style.cssText = "color:#888;font-size:11px;flex:1;";
+            dstatus.textContent = "← 先在上方选一位画师";
+            bottomBar.appendChild(dstatus);
+
+            const postGrid = document.createElement("div");
+            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:6px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;min-height:0;";
+
+            const postPageBar = document.createElement("div");
+            postPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
+
+            // 选中信息
+            const selectedInfo = document.createElement("div");
+            selectedInfo.style.cssText = "display:none;padding:6px 8px;background:#0f3460;border-top:1px solid #e94560;flex-shrink:0;font-size:11px;color:#b0bec5;";
+
+            bottomPanel.append(bottomBar, postGrid, postPageBar, selectedInfo);
+            root.appendChild(bottomPanel);
+
+            // ═══════════════════════════════════════════
+            //  函数
+            // ═══════════════════════════════════════════
+
+            function renderArtistPageBar(total) {
+                artistTotal = total;
+                const pages = Math.ceil(total / 36);
+                if (pages <= 1) { artistPageBar.style.display = "none"; return; }
+                artistPageBar.style.display = "flex";
+                artistPageBar.innerHTML = "";
+                const mk = (t, fn) => { const s=document.createElement("span");s.textContent=t;s.style.cssText="cursor:pointer;color:#4fc3f7;";s.onclick=fn;artistPageBar.appendChild(s); };
+                if (artistPage > 1) mk("◀", () => { artistPage--; loadArtists(); });
+                for (let i=Math.max(1,artistPage-2); i<=Math.min(pages,artistPage+2); i++) {
+                    const sp = document.createElement("span");
+                    sp.textContent = i;
+                    sp.style.cssText = `cursor:pointer;padding:1px 5px;border-radius:2px;background:${i===artistPage?"#e94560":"transparent"};color:${i===artistPage?"#fff":"#aaa"};`;
+                    if (i !== artistPage) sp.onclick = () => { artistPage = i; loadArtists(); };
+                    artistPageBar.appendChild(sp);
+                }
+                if (artistPage < pages) mk("▶", () => { artistPage++; loadArtists(); });
             }
 
-            function renderPage(total) {
-                totalResults = total;
-                const totalPages = Math.ceil(totalResults / 36);
-                if (totalPages <= 1) { pageBar.style.display = "none"; return; }
-                pageBar.style.display = "flex";
-                pageBar.innerHTML = "";
-                const prev = document.createElement("span");
-                prev.textContent = "◀ 上一页";
-                prev.style.cssText = `cursor:${page>1?"pointer":"default"};color:${page>1?"#4fc3f7":"#444"};font-size:11px;`;
-                if (page > 1) prev.onclick = () => goPage(page - 1);
-                pageBar.appendChild(prev);
-                const start = Math.max(1, page - 2);
-                const end = Math.min(totalPages, page + 2);
-                if (start > 1) { const e = document.createElement("span"); e.textContent = "..."; e.style.cssText = "color:#666;font-size:11px;"; pageBar.appendChild(e); }
-                for (let i = start; i <= end; i++) {
-                    const pn = document.createElement("span");
-                    pn.textContent = i;
-                    pn.style.cssText = `cursor:pointer;padding:1px 7px;border-radius:3px;font-size:11px;background:${i===page?"#e94560":"transparent"};color:${i===page?"#fff":"#aaa"};`;
-                    if (i !== page) pn.onclick = () => goPage(i);
-                    pageBar.appendChild(pn);
-                }
-                if (end < totalPages) { const e = document.createElement("span"); e.textContent = "..."; e.style.cssText = "color:#666;font-size:11px;"; pageBar.appendChild(e); }
-                const next = document.createElement("span");
-                next.textContent = "下一页 ▶";
-                next.style.cssText = `cursor:${page<totalPages?"pointer":"default"};color:${page<totalPages?"#4fc3f7":"#444"};font-size:11px;`;
-                if (page < totalPages) next.onclick = () => goPage(page + 1);
-                pageBar.appendChild(next);
-            }
-
-            function render() {
-                grid.innerHTML = "";
-                if (!results.length) {
-                    pageBar.style.display = "none";
-                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#888;"><div style="font-size:48px;margin-bottom:12px;">🔍</div><div style="font-size:15px;color:#aaa;">输入关键词搜索 Mooshie 艺术家（42k+ 画师）</div></div>';
-                    return;
-                }
-                for (const r of results) {
-                    const name = r.name || "";
-                    const slug = r.slug || "";
-                    const trig = r.trigger || "";
-                    const thumbUrl = r.thumb_url || "";
-
-                    const copyTagAt = "@" + (trig || name);
-                    const dbTag = r.slug || trig || name;
-
-                    const card = document.createElement("div");
-                    card.style.cssText = "background:#0f3460;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;width:calc(33.333% - 6px);flex-shrink:0;box-sizing:border-box;";
-                    card.onclick = () => {
-                        grid.querySelectorAll(".ad-sel").forEach(c => { c.style.borderColor = "transparent"; c.classList.remove("ad-sel"); });
-                        card.style.borderColor = "#e94560"; card.classList.add("ad-sel");
-                    };
-
-                    // 预览图
-                    const imgDiv = document.createElement("div");
-                    imgDiv.style.cssText = "width:100%;background:#16213e;display:flex;align-items:center;justify-content:center;aspect-ratio:1;";
-                    if (thumbUrl) {
-                        const img = new Image();
-                        img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-                        img.src = "/mooshie/image?url=" + encodeURIComponent(thumbUrl);
-                        img.onerror = function() { this.style.display = "none"; this.parentElement.textContent = "🖼"; this.parentElement.style.fontSize = "28px"; this.parentElement.style.color = "#555"; };
-                        imgDiv.appendChild(img);
-                    } else { imgDiv.textContent = "🖼"; imgDiv.style.fontSize = "28px"; imgDiv.style.color = "#555"; }
-
-                    // 信息
-                    const info = document.createElement("div");
-                    info.style.cssText = "padding:4px 6px;font-size:11px;color:#b0bec5;line-height:1.4;";
-                    let html = `<div style="font-weight:bold;color:#e0e0e0;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>`;
-                    html += `<div style="color:#888;font-size:10px;">📊 ${r.count || 0} posts</div>`;
-                    info.innerHTML = html;
-
-                    // 复制按钮
-                    const btnRow = document.createElement("div");
-                    btnRow.style.cssText = "display:flex;gap:3px;margin-top:3px;";
-                    const copyBtn = document.createElement("button");
-                    copyBtn.textContent = "📋 复制 @" + (trig || name);
-                    copyBtn.style.cssText = "flex:1;padding:3px 0;border:none;border-radius:3px;background:#e94560;color:#fff;cursor:pointer;font-size:10px;text-align:center;";
-                    copyBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(copyTagAt).then(() => {
-                            copyBtn.textContent = "✅";
-                            setTimeout(() => { copyBtn.textContent = "📋 复制 @" + (trig || name); }, 1500);
-                        });
-                    };
-                    btnRow.appendChild(copyBtn);
-                    info.appendChild(btnRow);
-
-                    // 去 D站搜索
-                    const dbBtn = document.createElement("button");
-                    dbBtn.textContent = "🔍 去 D站搜索";
-                    dbBtn.style.cssText = "display:block;width:100%;padding:3px 0;margin-top:2px;border:none;border-radius:3px;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:10px;text-align:center;";
-                    dbBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (tagW) { tagW.value = dbTag; }
-                        node.isChanged = true;
-                        for (const n of (app.graph._nodes || [])) {
-                            if (n.type === "DanbooruBrowser") {
-                                const el = n.nodeEl?.querySelector?.("input[type='text']");
-                                if (el) { el.value = dbTag; el.dispatchEvent(new Event("input", {bubbles:true})); el.dispatchEvent(new KeyboardEvent("keydown", {key:"Enter", bubbles:true})); }
-                                const aw = n.widgets?.find(w => w.name === "来自AnimaDex");
-                                if (aw) { aw.value = dbTag; }
-                            }
-                        }
-                        dbBtn.textContent = "✅ 已发送";
-                        setTimeout(() => { dbBtn.textContent = "🔍 去 D站搜索"; }, 1500);
-                    };
-                    info.appendChild(dbBtn);
-
-                    card.append(imgDiv, info);
-                    grid.appendChild(card);
-                }
-            }
-
-            async function doSearch(q) {
-                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#888;">⏳ 搜索中...</div>';
-                pageBar.style.display = "none";
+            async function loadArtists() {
+                artistGrid.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
                 try {
+                    const q = inp.value.trim();
                     const r = await fetch("/mooshie/search", {
-                        method: "POST", headers: {"Content-Type":"application/json"},
-                        body: JSON.stringify({mode:"artists", query: q, page, sort: sortMode}),
+                        method:"POST", headers:{"Content-Type":"application/json"},
+                        body: JSON.stringify({mode:"artists", query:q, page:artistPage, sort:sortMode}),
                     });
                     const d = await r.json();
-                    results = d.results || [];
-                    renderPage(d.total || 0);
-                } catch { results = []; }
-                render();
+                    artists = d.results || [];
+                    renderArtistPageBar(d.total || 0);
+                } catch { artists = []; }
+                renderArtists();
             }
 
-            async function search() {
-                page = 1;
-                const q = inp.value.trim();
-                if (q) doSearch(q);
+            function renderArtists() {
+                artistGrid.innerHTML = "";
+                if (!artists.length) {
+                    artistGrid.innerHTML = '<div style="padding:40px;color:#888;width:100%;text-align:center;">🔍 搜索 Mooshie 画师（42k+）</div>';
+                    return;
+                }
+                for (const a of artists) {
+                    const card = document.createElement("div");
+                    const selMark = selectedArtist === a.slug ? "2px solid #e94560" : "1px solid #0f3460";
+                    card.style.cssText = `width:calc(12.5% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selMark};box-sizing:border-box;flex-shrink:0;`;
+                    card.onclick = () => {
+                        selectedArtist = a.slug;
+                        if (tagW) tagW.value = "@" + (a.trigger || a.name);
+                        node.isChanged = true;
+                        renderArtists();
+                        dstatus.textContent = "⏳ 搜索 @" + (a.trigger||a.name) + " 的作品...";
+                        loadDanbooru(a.slug, 1);
+                    };
+
+                    const imgDiv = document.createElement("div");
+                    imgDiv.style.cssText = "width:100%;aspect-ratio:1;background:#0d0d1a;display:flex;align-items:center;justify-content:center;";
+                    if (a.thumb_url) {
+                        const img = new Image();
+                        img.style.cssText = "width:100%;height:100%;object-fit:cover;";
+                        img.src = "/mooshie/image?url=" + encodeURIComponent(a.thumb_url);
+                        img.onerror = function() { this.style.display="none"; this.parentElement.textContent="🖼"; this.parentElement.style.fontSize="20px"; this.parentElement.style.color="#444"; };
+                        imgDiv.appendChild(img);
+                    } else { imgDiv.textContent = "🖼"; imgDiv.style.cssText += "font-size:20px;color:#444;"; }
+                    card.appendChild(imgDiv);
+
+                    const nm = document.createElement("div");
+                    nm.textContent = a.name || a.trigger || "";
+                    nm.style.cssText = "padding:2px 4px;font-size:9px;color:#aaa;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+                    card.appendChild(nm);
+
+                    artistGrid.appendChild(card);
+                }
             }
 
-            el.append(bar, hint, grid, pageBar);
-            this.addDOMWidget("animadex_ui", "div", el, { onDraw: () => {} });
+            // ── D站 ──
 
-            doSearch("");
+            let dpage = 1, dtag = "";
+
+            async function loadDanbooru(tag, page) {
+                dtag = tag; dpage = page;
+                postGrid.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳ 加载 D站作品...</div>';
+                postPageBar.style.display = "none";
+                try {
+                    const r = await fetch("/mooshie/danbooru/search", {
+                        method:"POST", headers:{"Content-Type":"application/json"},
+                        body: JSON.stringify({tag, page}),
+                    });
+                    const d = await r.json();
+                    posts = d.posts || [];
+                    dstatus.textContent = `@${tag}: ${posts.length} 张作品`;
+                } catch { posts = []; dstatus.textContent = "D站请求失败"; }
+                renderPosts();
+            }
+
+            function renderPosts() {
+                postGrid.innerHTML = "";
+                if (!posts.length) {
+                    postGrid.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">📭 该画师暂无作品 或 搜索失败</div>';
+                    return;
+                }
+                for (const p of posts) {
+                    const card = document.createElement("div");
+                    const selMark = selectedPost === p.id ? "2px solid #e94560" : "1px solid #0f3460";
+                    card.style.cssText = `width:calc(25% - 4px);background:#0f3460;border-radius:4px;overflow:hidden;cursor:pointer;border:${selMark};box-sizing:border-box;flex-shrink:0;`;
+                    card.onclick = () => { selectPost(p); };
+
+                    const imgDiv = document.createElement("div");
+                    imgDiv.style.cssText = "width:100%;aspect-ratio:1;background:#0d0d1a;display:flex;align-items:center;justify-content:center;";
+                    if (p.preview_url) {
+                        const img = new Image();
+                        img.style.cssText = "width:100%;height:100%;object-fit:cover;";
+                        img.src = "/mooshie/image?url=" + encodeURIComponent(p.preview_url);
+                        img.onerror = function() { this.style.display="none"; this.parentElement.textContent="🖼"; this.parentElement.style.fontSize="24px"; this.parentElement.style.color="#444"; };
+                        imgDiv.appendChild(img);
+                    } else { imgDiv.textContent = "🖼"; imgDiv.style.cssText += "font-size:24px;color:#444;"; }
+                    card.appendChild(imgDiv);
+
+                    const info = document.createElement("div");
+                    info.style.cssText = "padding:2px 4px;font-size:9px;color:#aaa;";
+                    const r = p.rating==="e"?"🔞":p.rating==="q"?"⚠️":"";
+                    info.textContent = `${r} 👍${p.score||0} ${p.image_width||0}×${p.image_height||0}`;
+                    card.appendChild(info);
+
+                    postGrid.appendChild(card);
+                }
+                // 翻页
+                postPageBar.style.display = "flex";
+                postPageBar.innerHTML = "";
+                if (dpage > 1) {
+                    const prev = document.createElement("span");
+                    prev.textContent = "◀"; prev.style.cssText = "cursor:pointer;color:#4fc3f7;"; prev.onclick = () => loadDanbooru(dtag, dpage-1);
+                    postPageBar.appendChild(prev);
+                }
+                const pi = document.createElement("span");
+                pi.textContent = `第 ${dpage} 页`; pi.style.cssText = "color:#888;";
+                postPageBar.appendChild(pi);
+                const next = document.createElement("span");
+                next.textContent = "▶"; next.style.cssText = "cursor:pointer;color:#4fc3f7;"; next.onclick = () => loadDanbooru(dtag, dpage+1);
+                postPageBar.appendChild(next);
+            }
+
+            function selectPost(p) {
+                selectedPost = p.id;
+                if (selW) selW.value = JSON.stringify({post_id: p.id});
+                node.isChanged = true;
+                renderPosts();
+
+                // 显示选中信息
+                selectedInfo.style.display = "block";
+                selectedInfo.innerHTML = `
+                    <b style="color:#e94560;">✅ 已选 D站 #${p.id}</b>
+                    <div style="margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;">
+                        <span style="color:#888;">画师:</span><span>${esc(p.tag_string_artist || "—")}</span>
+                        <span style="color:#888;">角色:</span><span>${esc(p.tag_string_character || "—")}</span>
+                        <span style="color:#888;">常规:</span><span>${esc((p.tag_string_general || "").slice(0, 120))}</span>
+                        <span style="color:#888;">系列:</span><span>${esc(p.tag_string_copyright || "—")}</span>
+                        <span style="color:#888;">元标签:</span><span>${esc(p.tag_string_meta || "—")}</span>
+                    </div>`;
+            }
+
+            function esc(s) { return String(s).replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+            // ── init ──
+            this.addDOMWidget("mooshie_ui", "div", root, { onDraw: () => {} });
+            loadArtists();
         };
     },
 });
