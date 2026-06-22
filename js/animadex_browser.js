@@ -264,9 +264,40 @@ app.registerExtension({
             }
 
             // ═══════════════ 选中帖子 ═══════════════
+            function pushToEditablePrompt(post) {
+                // 找到图中所有 EditablePrompt 节点，直接往框里填上游值
+                const data = {
+                    artist: post.tag_string_artist || "",
+                    character: post.tag_string_character || "",
+                    series: post.tag_string_copyright || "",
+                    general: post.tag_string_general || "",
+                    meta: post.tag_string_meta || "",
+                };
+                for (const n of (app.graph._nodes || [])) {
+                    if (n.type !== "EditablePrompt") continue;
+                    // 写入 upstream_data widget
+                    const upW = n.widgets?.find(w => w.name === "upstream_data");
+                    if (upW) upW.value = JSON.stringify(data);
+
+                    // 对于每个分类，模式为"跟随"时填入上游值
+                    for (const cat of ["artist","character","series","general","meta"]) {
+                        const modeW = n.widgets?.find(w => w.name === `mode_${cat}`);
+                        if (modeW && modeW.value === "跟随") {
+                            const textW = n.widgets?.find(w => w.name === cat);
+                            if (textW) {
+                                textW.value = data[cat] || "";
+                                if (textW.callback) textW.callback(textW.value);
+                            }
+                        }
+                    }
+                    n.setDirtyCanvas(true);
+                }
+            }
+
             function selectPost(p) {
                 selectedPost = p.id;
                 if (selW) selW.value = JSON.stringify({post_id: p.id}); node.isChanged = true;
+                pushToEditablePrompt(p);
                 renderPosts();
                 selectedInfo.style.display = "block";
                 selectedInfo.innerHTML = `<b style="color:#e94560;">✅ D站 #${p.id}</b>
@@ -281,6 +312,7 @@ app.registerExtension({
             function selectFav(p) {
                 selectedPost = p.id;
                 if (selW) selW.value = JSON.stringify({post_id: p.id}); node.isChanged = true;
+                pushToEditablePrompt(p);
                 selectedInfo.style.display = "block";
                 selectedInfo.innerHTML = `<b style="color:#e94560;">⭐ 收藏 #${p.id}</b>
                     <div style="margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;">
