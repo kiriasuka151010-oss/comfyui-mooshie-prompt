@@ -2,15 +2,16 @@
 MooshieBrowser — ComfyUI 节点
 上半：Mooshieblob 画师浏览  下半：D站作品选择  合并输出标签
 """
-import json, asyncio, requests, random, hashlib, os
+import json, asyncio, requests, random
 from server import PromptServer
 from aiohttp import web
 
 from .mooshie_data import search as mooshie_search, get_facets as mooshie_facets
 
-DANBOORU_API = "https://danbooru.donmai.us"
+# D站 UA 必须和原版一致（Danbooru API 要求描述性 UA）
+DANBOORU_UA = "DanbooruAnimaPrompt/1.0 (Anime tag classifier)"
 _SESSION = requests.Session()
-_SESSION.headers.update({"User-Agent": "ComfyUI-Mooshie/1.0", "Accept": "application/json"})
+_SESSION.headers.update({"User-Agent": DANBOORU_UA, "Accept": "application/json"})
 
 # D站帖子缓存
 _post_cache = {}
@@ -45,15 +46,14 @@ def _batch_search(mode, queries, limit=36):
 # ── D站 API ──
 
 def _danbooru_search(tag, page=1, limit=24):
-    """搜索 D站帖子"""
+    """搜索 D站帖子 — 与原版 search_posts 一致的 UA"""
     tags = tag.strip().lstrip("@")
-    params = {"tags": tags, "page": page, "limit": limit}
+    params = {"tags": tags, "page": page, "limit": min(limit, 100)}
     try:
-        r = _SESSION.get(f"{DANBOORU_API}/posts.json", params=params, timeout=10)
+        r = _SESSION.get("https://danbooru.donmai.us/posts.json", params=params, timeout=10)
         if r.status_code != 200:
             return [], 0
-        posts = r.json()
-        return posts, len(posts)
+        return r.json(), len(r.json())
     except Exception:
         return [], 0
 
@@ -63,7 +63,7 @@ def _get_post_from_danbooru(post_id):
     if post_id in _post_cache:
         return _post_cache[post_id]
     try:
-        r = _SESSION.get(f"{DANBOORU_API}/posts/{post_id}.json", timeout=10)
+        r = _SESSION.get(f"https://danbooru.donmai.us/posts/{post_id}.json", timeout=10)
         if r.status_code != 200:
             return None
         post = r.json()
