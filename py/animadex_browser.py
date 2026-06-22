@@ -2,7 +2,7 @@
 MooshieBrowser — ComfyUI 节点
 上半：Mooshieblob 画师浏览  下半：D站作品选择  合并输出标签
 """
-import json, asyncio, requests, random
+import json, asyncio, requests, random, os, re, threading, time as _time
 from server import PromptServer
 from aiohttp import web
 
@@ -235,7 +235,6 @@ def register_routes():
             return web.json_response({"success": False, "error": str(e)}, status=500)
 
     # ── 收藏系统 ──
-    import threading, time as _time
     _fav_lock = threading.Lock()
     _FAV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mooshie_favorites.json")
 
@@ -293,11 +292,11 @@ def register_routes():
 
 # ── 简易标签分类 ──
 
-_COUNT_PATTERN = __import__("re").compile(r'^\d+(girl|boy|other|people)s?$', __import__("re").IGNORECASE)
+_COUNT_PATTERN = re.compile(r'^\d+(girl|boy|other|people)s?$', re.IGNORECASE)
 _META_TAGS = {"masterpiece", "best_quality", "highres", "absurdres", "lowres",
               "worst_quality", "bad_quality", "normal_quality", "watermark",
               "signature", "artist_name", "commission", "translated"}
-_YEAR_PATTERN = __import__("re").compile(r'^\d{4}$')
+_YEAR_PATTERN = re.compile(r'^\d{4}$')
 
 def _classify_tags(tags):
     groups = {"quality_meta": [], "count": [], "character": [], "series": [],
