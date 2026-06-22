@@ -179,6 +179,9 @@ def register_routes():
             simplified = [{
                 "id": p["id"],
                 "preview_url": p.get("preview_file_url") or p.get("large_file_url", ""),
+                "large_url": p.get("large_file_url") or p.get("file_url", ""),
+                "file_url": p.get("file_url", ""),
+                "tag_string": p.get("tag_string", ""),
                 "tag_string_artist": p.get("tag_string_artist", ""),
                 "tag_string_character": p.get("tag_string_character", ""),
                 "tag_string_general": p.get("tag_string_general", ""),
@@ -188,34 +191,126 @@ def register_routes():
                 "score": p.get("score", 0),
                 "image_width": p.get("image_width", 0),
                 "image_height": p.get("image_height", 0),
+                "is_video": p.get("file_ext", "") in ("mp4", "webm"),
             } for p in posts if p.get("preview_file_url")]
             return web.json_response({"success": True, "posts": simplified})
         except Exception as e:
             return web.json_response({"success": False, "error": str(e)}, status=500)
 
-    # D站帖子详情
-    @PromptServer.instance.routes.get("/mooshie/danbooru/post")
-    async def danbooru_post_route(request):
+    # D站帖子详情（返回分类标签 + 全量信息）
+    @PromptServer.instance.routes.get("/mooshie/post/{post_id}")
+    async def mooshie_post_route(request):
         try:
-            post_id = int(request.query.get("id", 0))
+            post_id = int(request.match_info.get("post_id", 0))
             if not post_id:
                 return web.json_response({"error": "missing id"}, status=400)
             post = _get_post_from_danbooru(post_id)
             if not post:
                 return web.json_response({"error": "not found"}, status=404)
+            # 解析标签并按分类分组
+            tag_string = post.get("tag_string", "")
+            tags = [t.strip() for t in tag_string.split() if t.strip()]
+            classified = _classify_tags(tags)
             return web.json_response({
                 "success": True,
                 "post": {
                     "id": post["id"],
+                    "preview_url": post.get("preview_file_url", ""),
+                    "large_url": post.get("large_file_url") or post.get("file_url", ""),
+                    "file_url": post.get("file_url", ""),
+                    "rating": post.get("rating", "s"),
+                    "score": post.get("score", 0),
+                    "image_width": post.get("image_width", 0),
+                    "image_height": post.get("image_height", 0),
                     "tag_string_artist": post.get("tag_string_artist", ""),
                     "tag_string_character": post.get("tag_string_character", ""),
                     "tag_string_general": post.get("tag_string_general", ""),
                     "tag_string_copyright": post.get("tag_string_copyright", ""),
                     "tag_string_meta": post.get("tag_string_meta", ""),
-                }
+                },
+                "classified": classified,
+                "total_tags": len(tags),
             })
         except Exception as e:
             return web.json_response({"success": False, "error": str(e)}, status=500)
+
+    # ── 收藏系统 ──
+    import threading, time as _time
+    _fav_lock = threading.Lock()
+    _FAV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mooshie_favorites.json")
+
+    def _load_favs():
+        try:
+            if os.path.exists(_FAV_FILE):
+                with open(_FAV_FILE, "r", encoding="utf-8") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return []
+
+    def _save_favs(favs):
+        os.makedirs(os.path.dirname(_FAV_FILE), exist_ok=True)
+        with open(_FAV_FILE, "w", encoding="utf-8") as f:
+            json.dump(favs, f, ensure_ascii=False, indent=2)
+
+    @PromptServer.instance.routes.get("/mooshie/favorites")
+    async def fav_list(request):
+        return web.json_response({"success": True, "favorites": _load_favs()})
+
+    @PromptServer.instance.routes.post("/mooshie/favorites/add")
+    async def fav_add(request):
+        try:
+            data = await request.json()
+            post = data.get("post")
+            if not post or not post.get("id"):
+                return web.json_response({"success": False, "error": "missing post"}, status=400)
+            with _fav_lock:
+                favs = _load_favs()
+                # 去重
+                favs = [f for f in favs if f.get("id") != post["id"]]
+                post["added_at"] = _time.time()
+                favs.insert(0, post)
+                _save_favs(favs)
+            return web.json_response({"success": True, "count": len(favs)})
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
+    @PromptServer.instance.routes.post("/mooshie/favorites/remove")
+    async def fav_remove(request):
+        try:
+            data = await request.json()
+            post_id = data.get("id")
+            if not post_id:
+                return web.json_response({"success": False, "error": "missing id"}, status=400)
+            with _fav_lock:
+                favs = _load_favs()
+                favs = [f for f in favs if f.get("id") != post_id]
+                _save_favs(favs)
+            return web.json_response({"success": True, "count": len(favs)})
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
+
+# ── 简易标签分类 ──
+
+_COUNT_PATTERN = __import__("re").compile(r'^\d+(girl|boy|other|people)s?$', __import__("re").IGNORECASE)
+_META_TAGS = {"masterpiece", "best_quality", "highres", "absurdres", "lowres",
+              "worst_quality", "bad_quality", "normal_quality", "watermark",
+              "signature", "artist_name", "commission", "translated"}
+_YEAR_PATTERN = __import__("re").compile(r'^\d{4}$')
+
+def _classify_tags(tags):
+    groups = {"quality_meta": [], "count": [], "character": [], "series": [],
+              "artist": [], "general": [], "all": list(tags)}
+    for t in tags:
+        lt = t.lower()
+        if lt.startswith("rating:") or lt in _META_TAGS or _YEAR_PATTERN.match(lt):
+            groups["quality_meta"].append(t)
+        elif _COUNT_PATTERN.match(lt):
+            groups["count"].append(t)
+        else:
+            groups["general"].append(t)
+    return groups
 
 
 NODE_CLASS_MAPPINGS = {"MooshieBrowser": MooshieBrowser}
