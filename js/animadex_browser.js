@@ -307,14 +307,14 @@ app.registerExtension({
                     let total = 0;
                     let html = `<div style="font-weight:bold;color:#e94560;font-size:14px;margin-bottom:8px;">📋 D站 #${p.id} · ${d.total_tags || 0} 标签</div>`;
                     const cats = [
-                        ["meta",       "质量/元", "#ff6b6b"],
-                        ["artist",     "画师",   "#ff6ec7"],
-                        ["character",  "角色",   "#6bcb77"],
-                        ["series",     "系列",   "#4d96ff"],
-                        ["general",    "常规",   "#a0a0a0"],
+                        ["tag_string_meta",      "质量/元", "#ff6b6b"],
+                        ["tag_string_artist",    "画师",   "#ff6ec7"],
+                        ["tag_string_character", "角色",   "#6bcb77"],
+                        ["tag_string_copyright", "系列",   "#4d96ff"],
+                        ["tag_string_general",   "常规",   "#a0a0a0"],
                     ];
-                    for (const [key, label, color] of cats) {
-                        const raw = (post["tag_string_"+key] || "").trim();
+                    for (const [field, label, color] of cats) {
+                        const raw = (post[field] || "").trim();
                         const tags = raw ? raw.split(/,\s*/).filter(Boolean) : [];
                         if (!tags.length) continue;
                         total += tags.length;
