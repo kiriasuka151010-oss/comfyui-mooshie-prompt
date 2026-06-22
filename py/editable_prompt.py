@@ -1,45 +1,31 @@
 """
-EditablePrompt v3 — 单线连接 + 逐类锁定/跟随
-接 MooshieBrowser 的 tag_data 输出（一根线），6类各自可锁可跟
+EditablePrompt v4 — 逐类跟随/锁定开关 + JS 自动同步
 """
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
+import json
+
 QUALITY_DEFAULT = "masterpiece, best quality, score_9, year 2025, highres, official art, sensitive"
 
 CATEGORIES = ["quality", "artist", "character", "series", "general", "meta"]
+CAT_LABELS = {"quality":"质量词","artist":"画师","character":"角色","series":"系列","general":"常规","meta":"元标签"}
 
 
 class EditablePrompt:
     @classmethod
     def INPUT_TYPES(cls):
+        required = {}
+        for cat in CATEGORIES:
+            required[f"mode_{cat}"] = (["跟随", "锁定"], {"default": "跟随"})
+            default_val = QUALITY_DEFAULT if cat == "quality" else ""
+            placeholder = CAT_LABELS[cat] + ("（锁定后可编辑）" if cat != "quality" else "")
+            required[cat] = ("STRING", {
+                "multiline": True, "default": default_val,
+                "placeholder": placeholder
+            })
         return {
-            "required": {
-                "quality": ("STRING", {
-                    "multiline": True, "default": QUALITY_DEFAULT,
-                    "placeholder": "质量词（清空则跟随上游）"
-                }),
-                "artist": ("STRING", {
-                    "multiline": True, "default": "",
-                    "placeholder": "画师（留空=跟随上游，填了=锁定）"
-                }),
-                "character": ("STRING", {
-                    "multiline": True, "default": "",
-                    "placeholder": "角色（留空=跟随上游）"
-                }),
-                "series": ("STRING", {
-                    "multiline": True, "default": "",
-                    "placeholder": "系列出处（留空=跟随上游）"
-                }),
-                "general": ("STRING", {
-                    "multiline": True, "default": "",
-                    "placeholder": "常规标签（留空=跟随上游）"
-                }),
-                "meta": ("STRING", {
-                    "multiline": True, "default": "",
-                    "placeholder": "元标签（留空=跟随上游）"
-                }),
-            },
+            "required": required,
             "optional": {
                 "upstream_data": ("STRING", {
                     "multiline": False, "defaultInput": True, "forceInput": True
@@ -55,13 +41,10 @@ class EditablePrompt:
     FUNCTION = "edit"
     CATEGORY = "mooshie"
 
-    def edit(self, quality, artist, character, series, general, meta,
-             upstream_data="", upstream_prompt=""):
-        # ── 上游有整段 prompt → 直接透传（向后兼容） ──
+    def edit(self, upstream_data="", upstream_prompt="", **kwargs):
         if upstream_prompt.strip():
             return (upstream_prompt, upstream_prompt)
 
-        # ── 解析上游 JSON 数据 ──
         upstream = {}
         if upstream_data.strip():
             try:
@@ -69,27 +52,16 @@ class EditablePrompt:
             except json.JSONDecodeError:
                 pass
 
-        # ── 手动值字典 ──
-        manual = {
-            "quality": quality.strip(),
-            "artist": artist.strip(),
-            "character": character.strip(),
-            "series": series.strip(),
-            "general": general.strip(),
-            "meta": meta.strip(),
-        }
-
-        # ── 逐类决定：lock 还是 follow ──
         resolved = {}
         for cat in CATEGORIES:
-            mv = manual[cat]
-            uv = upstream.get(cat, "")
-            if mv:
-                resolved[cat] = mv  # locked
+            mode = kwargs.get(f"mode_{cat}", "跟随")
+            manual_val = kwargs.get(cat, "").strip()
+            upstream_val = upstream.get(cat, "")
+            if mode == "锁定":
+                resolved[cat] = manual_val
             else:
-                resolved[cat] = uv  # follow upstream
+                resolved[cat] = upstream_val
 
-        # ── 拼合 prompt ──
         parts = [resolved["quality"]]
         if resolved["character"]:
             parts.append(resolved["character"])
@@ -107,9 +79,6 @@ class EditablePrompt:
         result = ", ".join(p for p in parts if p)
         return (result, result)
 
-
-# 需要用 json，import 放最上面
-import json
 
 NODE_CLASS_MAPPINGS["EditablePrompt"] = EditablePrompt
 NODE_DISPLAY_NAME_MAPPINGS["EditablePrompt"] = "Editable Prompt (逐类锁定/跟随)"
