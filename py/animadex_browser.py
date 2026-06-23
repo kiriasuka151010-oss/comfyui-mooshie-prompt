@@ -297,6 +297,46 @@ def register_routes():
         except Exception as e:
             return web.json_response({"success": False, "error": str(e)}, status=500)
 
+    # ── 模糊标签搜索 ──
+    _cn_tags = None  # {english_tag: chinese_name}
+
+    def _load_cn_tags():
+        nonlocal _cn_tags
+        if _cn_tags is not None:
+            return
+        # 从原版插件加载中文索引
+        cn_file = os.path.join(os.path.dirname(plugin_dir),
+                               "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn", "all_tags_cn.json")
+        try:
+            if os.path.exists(cn_file):
+                with open(cn_file, "r", encoding="utf-8") as f:
+                    _cn_tags = json.load(f)
+                print(f"[Mooshie] 加载中文标签索引: {len(_cn_tags)} 条")
+        except Exception:
+            pass
+        if _cn_tags is None:
+            _cn_tags = {}
+
+    @PromptServer.instance.routes.post("/mooshie/fuzzy_tags")
+    async def fuzzy_tags_route(request):
+        try:
+            data = await request.json()
+            query = data.get("query", "").strip()
+            if not query or len(query) < 1:
+                return web.json_response({"success": True, "tags": []})
+            _load_cn_tags()
+            q = query.lower()
+            results = []
+            # 查找中文匹配
+            for en_tag, cn_name in _cn_tags.items():
+                if q in cn_name.lower() or q in en_tag.lower():
+                    results.append({"tag": en_tag, "cn": cn_name})
+                if len(results) >= 15:
+                    break
+            return web.json_response({"success": True, "tags": results})
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)}, status=500)
+
 
 # ── 简易标签分类 ──
 

@@ -74,7 +74,42 @@ app.registerExtension({
             const dInp = document.createElement("input");
             dInp.type = "text"; dInp.placeholder = "搜索 D站 (tag/画师/作品名)...";
             dInp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #0f3460;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
-            dInp.onkeydown = (e) => { if (e.key === "Enter") { showFavorites = false; dpage = 1; loadDanbooru(dInp.value.trim(), 1); } };
+            dInp.onkeydown = (e) => {
+                if (e.key === "ArrowDown") { e.preventDefault(); const first = acList.querySelector("div"); if (first) { first.focus(); first.style.background = "#0d2137"; } return; }
+                if (e.key === "Enter") { if (acList.style.display !== "none") { acList.style.display = "none"; return; } showFavorites = false; dpage = 1; loadDanbooru(dInp.value.trim(), 1); }
+            };
+
+            // 自动补全下拉
+            const acList = document.createElement("div");
+            acList.style.cssText = "display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid #0f3460;border-radius:0 0 4px 4px;max-height:240px;overflow-y:auto;z-index:999;";
+            let _acTimer = null;
+            bottomBar.style.position = "relative";
+
+            dInp.oninput = () => {
+                const q = dInp.value.trim();
+                if (!q || q.length < 1) { acList.style.display = "none"; return; }
+                clearTimeout(_acTimer);
+                _acTimer = setTimeout(async () => {
+                    try {
+                        const r = await fetch("/mooshie/fuzzy_tags", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({query: q}) });
+                        const d = await r.json();
+                        const tags = d.tags || [];
+                        acList.innerHTML = "";
+                        if (!tags.length) { acList.style.display = "none"; return; }
+                        for (const t of tags) {
+                            const row = document.createElement("div");
+                            row.style.cssText = "padding:5px 8px;cursor:pointer;color:#b0bec5;font-size:12px;border-bottom:1px solid #0f3460;display:flex;gap:6px;";
+                            row.onmouseover = () => row.style.background = "#0d2137";
+                            row.onmouseout = () => row.style.background = "transparent";
+                            row.onclick = () => { dInp.value = t.tag; acList.style.display = "none"; dpage=1; loadDanbooru(t.tag, 1); };
+                            row.innerHTML = `<span style="font-weight:bold;color:#e0e0e0;">${t.tag}</span><span style="color:#888;margin-left:auto;">${t.cn||""}</span>`;
+                            acList.appendChild(row);
+                        }
+                        acList.style.display = "block";
+                    } catch { acList.style.display = "none"; }
+                }, 200);
+            };
+            dInp.onblur = () => setTimeout(() => acList.style.display = "none", 200);
 
             const dBtn = document.createElement("button");
             dBtn.textContent = "🔍"; dBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:13px;";
