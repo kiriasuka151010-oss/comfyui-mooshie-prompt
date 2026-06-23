@@ -26,14 +26,14 @@ app.registerExtension({
             let dpage = 1, dtag = "";
 
             const root = document.createElement("div");
-            root.style.cssText = "width:100%;height:100%;display:flex;flex-direction:column;background:#1a1a2e;border-radius:6px;min-height:0;";
+            root.style.cssText = "width:100%;height:100%;display:flex;flex-direction:column;background:#1a1a1a;border-radius:6px;min-height:0;";
 
             // ═══════════════ 上半：画师浏览 ═══════════════
             const topPanel = document.createElement("div");
             topPanel.style.cssText = "flex:0 0 auto;display:flex;flex-direction:column;border-bottom:2px solid #e94560;";
 
             const topBar = document.createElement("div");
-            topBar.style.cssText = "display:flex;gap:6px;padding:8px;align-items:center;border-bottom:1px solid #0f3460;flex-shrink:0;";
+            topBar.style.cssText = "display:flex;gap:6px;padding:8px;align-items:center;border-bottom:1px solid #222;flex-shrink:0;";
             const topLabel = document.createElement("span");
             topLabel.textContent = "🎨 画师浏览"; topLabel.style.cssText = "color:#e94560;font-weight:bold;font-size:13px;flex-shrink:0;";
 
@@ -48,7 +48,7 @@ app.registerExtension({
 
             const inp = document.createElement("input");
             inp.type = "text"; inp.placeholder = "搜索画师...";
-            inp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #0f3460;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
+            inp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #222;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
             inp.onkeydown = (e) => { if (e.key === "Enter") { artistPage = 1; loadArtists(); } };
             const sBtn = document.createElement("button");
             sBtn.textContent = "🔍"; sBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#e94560;color:#fff;cursor:pointer;font-size:14px;";
@@ -67,13 +67,13 @@ app.registerExtension({
             bottomPanel.style.cssText = "flex:1;display:flex;flex-direction:column;min-height:0;";
 
             const bottomBar = document.createElement("div");
-            bottomBar.style.cssText = "display:flex;gap:6px;padding:6px 8px;align-items:center;border-bottom:1px solid #0f3460;flex-shrink:0;";
+            bottomBar.style.cssText = "display:flex;gap:6px;padding:6px 8px;align-items:center;border-bottom:1px solid #222;flex-shrink:0;";
             const dLabel = document.createElement("span");
-            dLabel.textContent = "📋 D站"; dLabel.style.cssText = "color:#4fc3f7;font-weight:bold;font-size:12px;flex-shrink:0;";
+            dLabel.textContent = "📋 D站"; dLabel.style.cssText = "color:#00c9a7;font-weight:bold;font-size:12px;flex-shrink:0;";
 
             const dInp = document.createElement("input");
             dInp.type = "text"; dInp.placeholder = "搜索 D站 (tag/画师/作品名)...";
-            dInp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #0f3460;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
+            dInp.style.cssText = "flex:1;padding:4px 8px;border-radius:3px;border:1px solid #222;background:#16213e;color:#e0e0e0;font-size:12px;outline:none;";
             dInp.onkeydown = (e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); const first = acList.querySelector("div"); if (first) { first.focus(); first.style.background = "#0d2137"; } return; }
                 if (e.key === "Enter") { if (acList.style.display !== "none") { acList.style.display = "none"; return; } showFavorites = false; dpage = 1; loadDanbooru(dInp.value.trim(), 1); }
@@ -81,7 +81,7 @@ app.registerExtension({
 
             // 自动补全下拉
             const acList = document.createElement("div");
-            acList.style.cssText = "display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a2e;border:1px solid #0f3460;border-radius:0 0 4px 4px;max-height:240px;overflow-y:auto;z-index:999;";
+            acList.style.cssText = "display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #222;border-radius:0 0 4px 4px;max-height:240px;overflow-y:auto;z-index:999;";
             let _acTimer = null;
             bottomBar.style.position = "relative";
 
@@ -98,7 +98,7 @@ app.registerExtension({
                         if (!tags.length) { acList.style.display = "none"; return; }
                         for (const t of tags) {
                             const row = document.createElement("div");
-                            row.style.cssText = "padding:5px 8px;cursor:pointer;color:#b0bec5;font-size:12px;border-bottom:1px solid #0f3460;display:flex;gap:6px;";
+                            row.style.cssText = "padding:5px 8px;cursor:pointer;color:#b0bec5;font-size:12px;border-bottom:1px solid #222;display:flex;gap:6px;";
                             row.onmouseover = () => row.style.background = "#0d2137";
                             row.onmouseout = () => row.style.background = "transparent";
                             row.onclick = () => { dInp.value = t.tag; acList.style.display = "none"; dpage=1; loadDanbooru(t.tag, 1); };
@@ -113,7 +113,7 @@ app.registerExtension({
             bottomBar.appendChild(acList);
 
             const dBtn = document.createElement("button");
-            dBtn.textContent = "🔍"; dBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:13px;";
+            dBtn.textContent = "🔍"; dBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#222;color:#00c9a7;cursor:pointer;font-size:13px;";
             dBtn.onclick = () => { showFavorites = false; dpage = 1; loadDanbooru(dInp.value.trim(), 1); };
 
             // 分级按钮 S/Q/E
@@ -154,7 +154,7 @@ app.registerExtension({
             postPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
 
             const selectedInfo = document.createElement("div");
-            selectedInfo.style.cssText = "display:none;padding:6px 8px;background:#0f3460;border-top:1px solid #e94560;flex-shrink:0;font-size:11px;color:#b0bec5;";
+            selectedInfo.style.cssText = "display:none;padding:6px 8px;background:#222;border-top:1px solid #e94560;flex-shrink:0;font-size:11px;color:#b0bec5;";
 
             bottomPanel.append(bottomBar, postGrid, postPageBar, selectedInfo);
             root.appendChild(bottomPanel);
@@ -165,7 +165,7 @@ app.registerExtension({
                 const pages = Math.ceil(total / 36);
                 if (pages <= 1) { artistPageBar.style.display = "none"; return; }
                 artistPageBar.style.display = "flex"; artistPageBar.innerHTML = "";
-                const mk = (t, fn) => { const s=document.createElement("span");s.textContent=t;s.style.cssText="cursor:pointer;color:#4fc3f7;";s.onclick=fn;artistPageBar.appendChild(s); };
+                const mk = (t, fn) => { const s=document.createElement("span");s.textContent=t;s.style.cssText="cursor:pointer;color:#00c9a7;";s.onclick=fn;artistPageBar.appendChild(s); };
                 if (artistPage > 1) mk("◀", () => { artistPage--; loadArtists(); });
                 for (let i=Math.max(1,artistPage-2); i<=Math.min(pages,artistPage+2); i++) {
                     const sp = document.createElement("span"); sp.textContent = i;
@@ -192,7 +192,7 @@ app.registerExtension({
                 if (!artists.length) { artistGrid.innerHTML = '<div style="padding:40px;color:#888;width:100%;text-align:center;">🔍 搜索 Mooshie 画师（42k+）</div>'; return; }
                 for (const a of artists) {
                     const card = document.createElement("div");
-                    card.style.cssText = `width:calc(12.5% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selectedArtist===a.slug?"2px solid #e94560":"1px solid #0f3460"};box-sizing:border-box;flex-shrink:0;`;
+                    card.style.cssText = `width:calc(12.5% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selectedArtist===a.slug?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;flex-shrink:0;`;
                     card.onclick = () => {
                         selectedArtist = a.slug; if (tagW) tagW.value = "@" + (a.trigger || a.name); node.isChanged = true;
                         renderArtists(); dInp.value = a.slug || a.trigger || "";
@@ -224,7 +224,7 @@ app.registerExtension({
                 try {
                     const r = await fetch("/mooshie/danbooru/search", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag, page, rating: ratingFilter}) });
                     const d = await r.json(); posts = d.posts || [];
-                    dInp.style.borderColor = posts.length ? "#0f3460" : "#e94560";
+                    dInp.style.borderColor = posts.length ? "#222" : "#e94560";
                 } catch { posts = []; }
                 renderPosts();
             }
@@ -263,9 +263,9 @@ app.registerExtension({
                 if (!posts.length) { postGrid.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">📭 无结果</div>'; postPageBar.style.display="none"; return; }
                 posts.forEach(p => renderCard(p, p));
                 postPageBar.style.display = "flex"; postPageBar.innerHTML = "";
-                if (dpage > 1) { const prev=document.createElement("span");prev.textContent="◀";prev.style.cssText="cursor:pointer;color:#4fc3f7;";prev.onclick=()=>loadDanbooru(dtag,dpage-1);postPageBar.appendChild(prev); }
+                if (dpage > 1) { const prev=document.createElement("span");prev.textContent="◀";prev.style.cssText="cursor:pointer;color:#00c9a7;";prev.onclick=()=>loadDanbooru(dtag,dpage-1);postPageBar.appendChild(prev); }
                 const pi=document.createElement("span");pi.textContent=`第 ${dpage} 页`;pi.style.cssText="color:#888;";postPageBar.appendChild(pi);
-                const next=document.createElement("span");next.textContent="▶";next.style.cssText="cursor:pointer;color:#4fc3f7;";next.onclick=()=>loadDanbooru(dtag,dpage+1);postPageBar.appendChild(next);
+                const next=document.createElement("span");next.textContent="▶";next.style.cssText="cursor:pointer;color:#00c9a7;";next.onclick=()=>loadDanbooru(dtag,dpage+1);postPageBar.appendChild(next);
             }
 
             function renderFavs() {
@@ -276,7 +276,7 @@ app.registerExtension({
 
             function renderCard(p, postData) {
                 const card = document.createElement("div");
-                card.style.cssText = `width:100%;background:#0f3460;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #0f3460"};box-sizing:border-box;margin-bottom:4px;break-inside:avoid;position:relative;`;
+                card.style.cssText = `width:100%;background:#222;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;margin-bottom:4px;break-inside:avoid;position:relative;`;
                 card.onclick = () => { if (!showFavorites) selectPost(postData); else selectFav(postData); };
 
                 // 双击大图
@@ -385,7 +385,7 @@ app.registerExtension({
                 ov.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;";
                 ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
                 const box = document.createElement("div");
-                box.style.cssText = "background:rgba(26,26,46,0.95);border:1px solid #0f3460;border-radius:10px;padding:16px;max-width:90%;max-height:80%;overflow:auto;color:#e0e0e0;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);";
+                box.style.cssText = "background:rgba(26,26,46,0.95);border:1px solid #222;border-radius:10px;padding:16px;max-width:90%;max-height:80%;overflow:auto;color:#e0e0e0;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);";
                 box.innerHTML = '<div style="text-align:center;color:#888;">⏳ 加载标签...</div>';
                 ov.appendChild(box); document.body.appendChild(ov);
 
@@ -441,7 +441,7 @@ app.registerExtension({
                 const bar = document.createElement("div");
                 bar.style.cssText = "display:flex;gap:10px;align-items:center;";
                 const origBtn = document.createElement("span");
-                origBtn.textContent = "📥 查看原图"; origBtn.style.cssText = "padding:8px 18px;border-radius:6px;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:14px;font-weight:bold;";
+                origBtn.textContent = "📥 查看原图"; origBtn.style.cssText = "padding:8px 18px;border-radius:6px;background:#222;color:#00c9a7;cursor:pointer;font-size:14px;font-weight:bold;";
                 let showingOrig = false;
                 origBtn.onclick = () => {
                     if (showingOrig) return; showingOrig = true;
