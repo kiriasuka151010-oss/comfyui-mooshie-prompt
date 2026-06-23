@@ -110,6 +110,7 @@ app.registerExtension({
                 }, 200);
             };
             dInp.onblur = () => setTimeout(() => acList.style.display = "none", 200);
+            bottomBar.appendChild(acList);
 
             const dBtn = document.createElement("button");
             dBtn.textContent = "🔍"; dBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:13px;";
