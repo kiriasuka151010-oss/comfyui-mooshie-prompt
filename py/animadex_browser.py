@@ -331,17 +331,43 @@ def register_routes():
                 pass
 
         # 2. 角色名 CSV (中→英)
+        import csv as csv_import
         cp = os.path.join(zh_dir, "wai_characters.csv")
         if os.path.exists(cp):
             try:
-                csv_import = __import__("csv")
                 with open(cp, "r", encoding="utf-8") as f:
                     for row in csv_import.reader(f):
                         if len(row) >= 2 and row[0].strip() and row[1].strip():
                             _cn_tags.setdefault(row[1].strip(), row[0].strip())
-                print(f"[Mooshie] 角色索引加载完成, 总计 {len(_cn_tags)} 条")
             except Exception as e:
                 print(f"[Mooshie] 角色索引加载失败: {e}")
+
+        # 3. 海量标签 CSV (50k条, GBK编码)
+        enhanced_paths = [
+            os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "tags_enhanced.csv"),
+            os.path.join(os.path.dirname(custom_nodes), "tags_enhanced.csv"),
+        ]
+        for cpath in enhanced_paths:
+            if not os.path.exists(cpath):
+                continue
+            for enc in ["utf-8", "utf-8-sig", "gbk", "gb2312", "latin-1"]:
+                try:
+                    with open(cpath, "r", encoding=enc, newline="") as f:
+                        # 先跳过 header
+                        next(f)
+                        for row in csv_import.reader(f):
+                            if len(row) >= 2 and row[0].strip() and row[1].strip():
+                                en_tag = row[0].strip()
+                                cn_raw = row[1].strip()
+                                # cn_name 可能是逗号分隔的多个翻译，取第一个
+                                cn_first = cn_raw.split(",")[0].strip()
+                                if cn_first and en_tag not in _cn_tags:
+                                    _cn_tags[en_tag] = cn_first
+                    break  # 成功就退出编码尝试
+                except (UnicodeDecodeError, StopIteration):
+                    continue
+            break  # 成功就退出路径尝试
+        print(f"[Mooshie] 索引就绪: {len(_cn_tags)} 条")
 
     @PromptServer.instance.routes.post("/mooshie/fuzzy_tags")
     async def fuzzy_tags_route(request):
