@@ -149,7 +149,10 @@ app.registerExtension({
             bottomBar.append(dLabel, dInp, dBtn, favTab);
 
             const postGrid = document.createElement("div");
-            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:4px;columns:3;column-gap:4px;min-height:0;";
+            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:4px;min-height:0;";
+            const postGridInner = document.createElement("div");
+            postGridInner.style.cssText = "columns:3;column-gap:4px;";
+            postGrid.appendChild(postGridInner);
             const postPageBar = document.createElement("div");
             postPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
 
@@ -219,7 +222,7 @@ app.registerExtension({
             async function loadDanbooru(tag, page) {
                 dtag = tag; dpage = page; showFavorites = false;
                 favTab.style.background = "transparent"; favTab.style.color = "#888";
-                postGrid.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
+                postGridInner.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
                 postPageBar.style.display = "none";
                 try {
                     const r = await fetch("/mooshie/danbooru/search", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag, page, rating: ratingFilter}) });
@@ -230,7 +233,7 @@ app.registerExtension({
             }
 
             async function loadFavorites() {
-                postGrid.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
+                postGridInner.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
                 postPageBar.style.display = "none";
                 try {
                     const r = await fetch("/mooshie/favorites"); const d = await r.json();
@@ -259,8 +262,8 @@ app.registerExtension({
             }
 
             function renderPosts() {
-                postGrid.innerHTML = "";
-                if (!posts.length) { postGrid.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">📭 无结果</div>'; postPageBar.style.display="none"; return; }
+                postGridInner.innerHTML = "";
+                if (!posts.length) { postGridInner.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">📭 无结果</div>'; postPageBar.style.display="none"; return; }
                 posts.forEach(p => renderCard(p, p));
                 postPageBar.style.display = "flex"; postPageBar.innerHTML = "";
                 if (dpage > 1) { const prev=document.createElement("span");prev.textContent="◀";prev.style.cssText="cursor:pointer;color:#00c9a7;";prev.onclick=()=>loadDanbooru(dtag,dpage-1);postPageBar.appendChild(prev); }
@@ -269,8 +272,8 @@ app.registerExtension({
             }
 
             function renderFavs() {
-                postGrid.innerHTML = "";
-                if (!favorites.length) { postGrid.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">⭐ 暂无收藏，去 D站搜图后点 ❤️</div>'; return; }
+                postGridInner.innerHTML = "";
+                if (!favorites.length) { postGridInner.innerHTML = '<div style="padding:40px;color:#666;width:100%;text-align:center;">⭐ 暂无收藏，去 D站搜图后点 ❤️</div>'; return; }
                 favorites.forEach(p => renderCard(p, p));
             }
 
@@ -316,7 +319,7 @@ app.registerExtension({
                 btns.appendChild(t);
 
                 card.appendChild(btns);
-                postGrid.appendChild(card);
+                postGridInner.appendChild(card);
             }
 
             // ═══════════════ 选中帖子 ═══════════════
