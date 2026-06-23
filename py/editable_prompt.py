@@ -30,9 +30,6 @@ class EditablePrompt:
                 "upstream_data": ("STRING", {
                     "multiline": False, "defaultInput": True, "forceInput": True
                 }),
-                "upstream_prompt": ("STRING", {
-                    "multiline": False, "defaultInput": True, "forceInput": True
-                }),
             },
         }
 
@@ -41,10 +38,7 @@ class EditablePrompt:
     FUNCTION = "edit"
     CATEGORY = "mooshie"
 
-    def edit(self, upstream_data="", upstream_prompt="", **kwargs):
-        if upstream_prompt.strip():
-            return (upstream_prompt, upstream_prompt)
-
+    def edit(self, upstream_data="", **kwargs):
         upstream = {}
         if upstream_data.strip():
             try:

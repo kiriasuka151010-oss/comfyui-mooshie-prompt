@@ -13,11 +13,6 @@
       "inputs": [],
       "outputs": [
         {"name": "artist_tag", "type": "STRING", "links": []},
-        {"name": "artist_tags", "type": "STRING", "links": []},
-        {"name": "char_tags", "type": "STRING", "links": []},
-        {"name": "general_tags", "type": "STRING", "links": []},
-        {"name": "series_tags", "type": "STRING", "links": []},
-        {"name": "meta_tags", "type": "STRING", "links": []},
         {"name": "tag_data", "type": "STRING", "links": [1]}
       ],
       "properties": {"Node name for S&R": "MooshieBrowser"},
@@ -179,7 +174,7 @@
     }
   ],
   "links": [
-    [1, 1, 6, 8, 2, "STRING"],
+    [1, 1, 1, 8, 2, "STRING"],
     [13, 8, 0, 10, 1, "STRING"],
     [15, 8, 1, 9, 0, "*"],
     [20, 13, 0, 10, 0, "CLIP"],
@@ -192,7 +187,7 @@
     [33, 16, 0, 17, 0, "LATENT"],
     [34, 17, 0, 18, 0, "IMAGE"]
   ],
-  "groups": [{"id":1,"title":"Mooshie → EditablePrompt (逐类跟随/锁定)","bounding":[80,60,3000,1400],"color":"#3f789e","font_size":24}],
+  "groups": [{"id":1,"title":"Mooshie → EditablePrompt","bounding":[80,60,3000,1400],"color":"#3f789e","font_size":24}],
   "config": {},
   "extra": {},
   "version": 0.4

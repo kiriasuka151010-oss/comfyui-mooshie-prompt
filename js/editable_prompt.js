@@ -16,7 +16,7 @@ app.registerExtension({
             // 隐藏所有 mode_* 和 upstream 相关的 widget（只留可编辑的）
             const widgets = node.widgets || [];
             for (const w of widgets) {
-                if (w.name === "upstream_data" || w.name === "upstream_prompt") {
+                if (w.name === "upstream_data") {
                     w.computeSize = () => [0.1, 20];
                 }
             }

@@ -195,7 +195,7 @@ app.registerExtension({
                 if (!artists.length) { artistGrid.innerHTML = '<div style="padding:40px;color:#888;width:100%;text-align:center;">🔍 搜索 Mooshie 画师（42k+）</div>'; return; }
                 for (const a of artists) {
                     const card = document.createElement("div");
-                    card.style.cssText = `width:calc(12.5% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selectedArtist===a.slug?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;flex-shrink:0;`;
+                    card.style.cssText = `width:calc(16.666% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selectedArtist===a.slug?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;flex-shrink:0;`;
                     card.onclick = () => {
                         selectedArtist = a.slug; if (tagW) tagW.value = "@" + (a.trigger || a.name); node.isChanged = true;
                         renderArtists(); dInp.value = a.slug || a.trigger || "";
