@@ -13,11 +13,9 @@ app.registerExtension({
             this.title = "Mooshie 画师 + D站 (Mooshie Browser)";
             this.isChanged = true;
             const node = this;
-
-            const tagW = node.widgets?.find(w => w.name === "_tag");
-            if (tagW) { tagW.computeSize = () => [0.1, 20]; tagW.serialize = true; }
+            // ── widgets ──
             const selW = node.widgets?.find(w => w.name === "selection_data");
-            if (selW) { selW.computeSize = () => [0.1, 20]; selW.serialize = true; }
+            if (selW) { selW.computeSize = () => [0.1, 0]; selW.serialize = true; }
 
             // ── state ──
             let sortMode = "count", artists = [], artistPage = 1, artistTotal = 0;
@@ -197,7 +195,7 @@ app.registerExtension({
                     const card = document.createElement("div");
                     card.style.cssText = `width:calc(16.666% - 4px);background:#16213e;border-radius:3px;overflow:hidden;cursor:pointer;border:${selectedArtist===a.slug?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;flex-shrink:0;`;
                     card.onclick = () => {
-                        selectedArtist = a.slug; if (tagW) tagW.value = "@" + (a.trigger || a.name); node.isChanged = true;
+                        selectedArtist = a.slug;
                         renderArtists(); dInp.value = a.slug || a.trigger || "";
                     };
                     const imgDiv = document.createElement("div");

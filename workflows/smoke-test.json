@@ -12,11 +12,10 @@
       "mode": 0,
       "inputs": [],
       "outputs": [
-        {"name": "artist_tag", "type": "STRING", "links": []},
         {"name": "tag_data", "type": "STRING", "links": [1]}
       ],
       "properties": {"Node name for S&R": "MooshieBrowser"},
-      "widgets_values": ["", "{}"],
+      "widgets_values": ["{}"],
       "color": "#223", "bgcolor": "#335"
     },
     {
@@ -174,7 +173,7 @@
     }
   ],
   "links": [
-    [1, 1, 1, 8, 2, "STRING"],
+    [1, 1, 0, 8, 2, "STRING"],
     [13, 8, 0, 10, 1, "STRING"],
     [15, 8, 1, 9, 0, "*"],
     [20, 13, 0, 10, 0, "CLIP"],

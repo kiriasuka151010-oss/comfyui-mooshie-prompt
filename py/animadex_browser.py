@@ -82,13 +82,12 @@ class MooshieBrowser:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "_tag": ("STRING", {"default": "", "multiline": False}),
                 "selection_data": ("STRING", {"default": "{}", "multiline": True}),
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("artist_tag", "tag_data")
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("tag_data",)
     FUNCTION = "browse"
     CATEGORY = "mooshie"
 
@@ -96,8 +95,7 @@ class MooshieBrowser:
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def browse(self, _tag="", selection_data="{}"):
-        artist_tag = (_tag or "").strip()
+    def browse(self, selection_data="{}"):
         try:
             sel = json.loads(selection_data)
         except json.JSONDecodeError:
@@ -114,12 +112,9 @@ class MooshieBrowser:
                     "general": post.get("tag_string_general", ""),
                     "meta": post.get("tag_string_meta", ""),
                 })
-                return (
-                    artist_tag,
-                    tag_data,
-                )
+                return (tag_data,)
 
-        return (artist_tag, "{}")
+        return ("{}",)
 
 
 # ── API 路由 ──
