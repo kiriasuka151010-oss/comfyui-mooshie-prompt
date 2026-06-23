@@ -305,8 +305,9 @@ def register_routes():
         if _cn_tags is not None:
             return
         # 从原版插件加载中文索引
-        cn_file = os.path.join(os.path.dirname(plugin_dir),
-                               "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn", "all_tags_cn.json")
+        my_dir = os.path.dirname(os.path.abspath(__file__))             # .../comfyui-mooshie-prompt/py/
+        custom_nodes = os.path.dirname(os.path.dirname(my_dir))         # .../custom_nodes/
+        cn_file = os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn", "all_tags_cn.json")
         try:
             if os.path.exists(cn_file):
                 with open(cn_file, "r", encoding="utf-8") as f:
