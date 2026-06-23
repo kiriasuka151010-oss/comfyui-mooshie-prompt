@@ -149,7 +149,7 @@ app.registerExtension({
             bottomBar.append(dLabel, dInp, dBtn, favTab);
 
             const postGrid = document.createElement("div");
-            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:6px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;min-height:0;";
+            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:6px;columns:3;column-gap:4px;min-height:0;";
             const postPageBar = document.createElement("div");
             postPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
 
@@ -276,16 +276,16 @@ app.registerExtension({
 
             function renderCard(p, postData) {
                 const card = document.createElement("div");
-                card.style.cssText = `width:calc(25% - 4px);background:#0f3460;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #0f3460"};box-sizing:border-box;flex-shrink:0;position:relative;`;
+                card.style.cssText = `width:100%;background:#0f3460;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #0f3460"};box-sizing:border-box;margin-bottom:4px;break-inside:avoid;position:relative;`;
                 card.onclick = () => { if (!showFavorites) selectPost(postData); else selectFav(postData); };
 
                 // 双击大图
                 card.ondblclick = (e) => { e.stopPropagation(); showLargeImage(postData); };
 
                 const imgDiv = document.createElement("div");
-                imgDiv.style.cssText = "width:100%;aspect-ratio:1;background:#0d0d1a;display:flex;align-items:center;justify-content:center;";
+                imgDiv.style.cssText = "width:100%;background:#0d0d1a;display:flex;align-items:center;justify-content:center;";
                 if (p.preview_url) {
-                    const img = new Image(); img.style.cssText = "width:100%;height:100%;object-fit:cover;";
+                    const img = new Image(); img.style.cssText = "width:100%;height:auto;display:block;";
                     img.src = "/mooshie/image?url=" + encodeURIComponent(p.preview_url);
                     img.onerror = function() { this.style.display="none"; this.parentElement.textContent="🖼"; this.parentElement.style.fontSize="24px"; this.parentElement.style.color="#444"; };
                     imgDiv.appendChild(img);
@@ -404,7 +404,7 @@ app.registerExtension({
                     ];
                     for (const [field, label, color] of cats) {
                         const raw = (post[field] || "").trim();
-                        const tags = raw ? raw.split(/,\s*/).filter(Boolean) : [];
+                        const tags = raw ? raw.split(/\s+/).filter(Boolean) : [];
                         if (!tags.length) continue;
                         total += tags.length;
                         html += `<div style="margin:6px 0;"><span style="background:${color}22;color:${color};padding:1px 6px;border-radius:3px;font-size:11px;font-weight:bold;">${label}</span> `;
