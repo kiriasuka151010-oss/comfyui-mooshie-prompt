@@ -304,19 +304,33 @@ def register_routes():
         nonlocal _cn_tags
         if _cn_tags is not None:
             return
-        # 从原版插件加载中文索引
-        my_dir = os.path.dirname(os.path.abspath(__file__))             # .../comfyui-mooshie-prompt/py/
-        custom_nodes = os.path.dirname(os.path.dirname(my_dir))         # .../custom_nodes/
-        cn_file = os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn", "all_tags_cn.json")
-        try:
-            if os.path.exists(cn_file):
-                with open(cn_file, "r", encoding="utf-8") as f:
-                    _cn_tags = json.load(f)
-                print(f"[Mooshie] 加载中文标签索引: {len(_cn_tags)} 条")
-        except Exception:
-            pass
-        if _cn_tags is None:
-            _cn_tags = {}
+        _cn_tags = {}
+        my_dir = os.path.dirname(os.path.abspath(__file__))
+        custom_nodes = os.path.dirname(os.path.dirname(my_dir))
+        zh_dir = os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn")
+
+        # 1. 标签中英对照
+        jp = os.path.join(zh_dir, "all_tags_cn.json")
+        if os.path.exists(jp):
+            try:
+                with open(jp, "r", encoding="utf-8") as f:
+                    _cn_tags.update(json.load(f))
+                print(f"[Mooshie] 标签索引: {len(_cn_tags)} 条")
+            except Exception:
+                pass
+
+        # 2. 角色名 CSV (中→英)
+        cp = os.path.join(zh_dir, "wai_characters.csv")
+        if os.path.exists(cp):
+            try:
+                csv_import = __import__("csv")
+                with open(cp, "r", encoding="utf-8") as f:
+                    for row in csv_import.reader(f):
+                        if len(row) >= 2 and row[0].strip() and row[1].strip():
+                            _cn_tags.setdefault(row[1].strip(), row[0].strip())
+                print(f"[Mooshie] 角色索引加载完成, 总计 {len(_cn_tags)} 条")
+            except Exception as e:
+                print(f"[Mooshie] 角色索引加载失败: {e}")
 
     @PromptServer.instance.routes.post("/mooshie/fuzzy_tags")
     async def fuzzy_tags_route(request):
