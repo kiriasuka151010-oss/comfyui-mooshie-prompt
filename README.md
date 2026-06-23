@@ -32,7 +32,7 @@ git clone https://github.com/kiriasuka151010-oss/comfyui-mooshie-prompt.git
 
 重启 ComfyUI，拖入 `workflows/smoke-test.json` 即可开始。
 
-**依赖：** 中文标签索引首次启动自动从同目录的 `ComfyUI-Danbooru-Anima-Prompt` 加载，无需额外配置。
+**依赖：** 内置中文标签索引，无需额外安装。海量标签可选：把原版的 `tags_enhanced.csv` 放到插件根目录即可获得 50k+ 标签覆盖。
 
 ## 工作流
 

@@ -298,8 +298,6 @@ def register_routes():
             return
         _cn_tags = {}
         my_dir = os.path.dirname(os.path.abspath(__file__))
-        custom_nodes = os.path.dirname(os.path.dirname(my_dir))
-        zh_dir = os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn")
 
         # 0. 内置角色映射（无文件依赖）
         _cn_tags.update({
@@ -312,53 +310,59 @@ def register_routes():
             "skadi_(arknights)": "斯卡蒂", "surtr_(arknights)": "史尔特尔",
         })
 
-        # 1. 标签中英对照
-        jp = os.path.join(zh_dir, "all_tags_cn.json")
-        if os.path.exists(jp):
-            try:
-                with open(jp, "r", encoding="utf-8") as f:
-                    _cn_tags.update(json.load(f))
-                print(f"[Mooshie] 标签索引: {len(_cn_tags)} 条")
-            except Exception:
-                pass
-
-        # 2. 角色名 CSV (中→英)
-        import csv as csv_import
-        cp = os.path.join(zh_dir, "wai_characters.csv")
-        if os.path.exists(cp):
-            try:
-                with open(cp, "r", encoding="utf-8") as f:
-                    for row in csv_import.reader(f):
-                        if len(row) >= 2 and row[0].strip() and row[1].strip():
-                            _cn_tags.setdefault(row[1].strip(), row[0].strip())
-            except Exception as e:
-                print(f"[Mooshie] 角色索引加载失败: {e}")
-
-        # 3. 海量标签 CSV (50k条, GBK编码)
-        enhanced_paths = [
-            os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "tags_enhanced.csv"),
-            os.path.join(os.path.dirname(custom_nodes), "tags_enhanced.csv"),
+        # 数据文件搜索顺序：1) 我们自己目录  2) 原版插件（兼容）
+        zh_dirs = [
+            os.path.join(my_dir, "zh_cn"),
+            os.path.join(os.path.dirname(my_dir), "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn"),
         ]
-        for cpath in enhanced_paths:
+        csv_paths = [
+            os.path.join(my_dir, "..", "tags_enhanced.csv"),
+            os.path.join(os.path.dirname(my_dir), "ComfyUI-Danbooru-Anima-Prompt", "tags_enhanced.csv"),
+        ]
+
+        # 1. 标签中英对照
+        for d in zh_dirs:
+            jp = os.path.join(d, "all_tags_cn.json")
+            if os.path.exists(jp):
+                try:
+                    with open(jp, "r", encoding="utf-8") as f:
+                        _cn_tags.update(json.load(f))
+                    break
+                except Exception:
+                    pass
+
+        # 2. 角色名 CSV
+        import csv as csv_import
+        for d in zh_dirs:
+            cp = os.path.join(d, "wai_characters.csv")
+            if os.path.exists(cp):
+                try:
+                    with open(cp, "r", encoding="utf-8") as f:
+                        for row in csv_import.reader(f):
+                            if len(row) >= 2 and row[0].strip() and row[1].strip():
+                                _cn_tags.setdefault(row[1].strip(), row[0].strip())
+                    break
+                except Exception:
+                    pass
+
+        # 3. 海量标签 CSV (6.5MB, 可选)
+        for cpath in csv_paths:
             if not os.path.exists(cpath):
                 continue
             for enc in ["utf-8", "utf-8-sig", "gbk", "gb2312", "latin-1"]:
                 try:
                     with open(cpath, "r", encoding=enc, newline="") as f:
-                        # 先跳过 header
                         next(f)
                         for row in csv_import.reader(f):
                             if len(row) >= 2 and row[0].strip() and row[1].strip():
                                 en_tag = row[0].strip()
-                                cn_raw = row[1].strip()
-                                # cn_name 可能是逗号分隔的多个翻译，取第一个
-                                cn_first = cn_raw.split(",")[0].strip()
-                                if cn_first and en_tag not in _cn_tags:
-                                    _cn_tags[en_tag] = cn_first
-                    break  # 成功就退出编码尝试
+                                cn = row[1].strip().split(",")[0].strip()
+                                if cn and en_tag not in _cn_tags:
+                                    _cn_tags[en_tag] = cn
+                    break
                 except (UnicodeDecodeError, StopIteration):
                     continue
-            break  # 成功就退出路径尝试
+            break
         print(f"[Mooshie] 索引就绪: {len(_cn_tags)} 条")
 
     @PromptServer.instance.routes.post("/mooshie/fuzzy_tags")
