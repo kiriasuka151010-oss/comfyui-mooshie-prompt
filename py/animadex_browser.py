@@ -309,6 +309,17 @@ def register_routes():
         custom_nodes = os.path.dirname(os.path.dirname(my_dir))
         zh_dir = os.path.join(custom_nodes, "ComfyUI-Danbooru-Anima-Prompt", "py", "zh_cn")
 
+        # 0. 内置角色映射（无文件依赖）
+        _cn_tags.update({
+            "hu_tao_(genshin_impact)": "胡桃", "ganyu_(genshin_impact)": "甘雨",
+            "keqing_(genshin_impact)": "刻晴", "raiden_shogun_(genshin_impact)": "雷电将军",
+            "nahida_(genshin_impact)": "纳西妲", "furina_(genshin_impact)": "芙宁娜",
+            "rem_(re:zero)": "蕾姆", "ram_(re:zero)": "拉姆", "emilia_(re:zero)": "爱蜜莉雅",
+            "hatsune_miku": "初音未来", "blue_archive": "碧蓝档案",
+            "amiya_(arknights)": "阿米娅", "exusiai_(arknights)": "能天使",
+            "skadi_(arknights)": "斯卡蒂", "surtr_(arknights)": "史尔特尔",
+        })
+
         # 1. 标签中英对照
         jp = os.path.join(zh_dir, "all_tags_cn.json")
         if os.path.exists(jp):
