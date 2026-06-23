@@ -116,6 +116,27 @@ app.registerExtension({
             dBtn.textContent = "🔍"; dBtn.style.cssText = "padding:4px 10px;border-radius:3px;border:none;background:#0f3460;color:#4fc3f7;cursor:pointer;font-size:13px;";
             dBtn.onclick = () => { showFavorites = false; dpage = 1; loadDanbooru(dInp.value.trim(), 1); };
 
+            // 分级按钮 S/Q/E
+            let ratingFilter = null; // null=全部, "s"/"q"/"e" 或组合
+            const ratingBtns = {};
+            for (const [rk, rl, rc] of [["s","S","#4caf50"],["q","Q","#ff9800"],["e","E","#e94560"]]) {
+                const rb = document.createElement("button");
+                rb.textContent = rl;
+                rb.title = rk==="s"?"安全":rk==="q"?"可疑":"R18";
+                rb.style.cssText = `padding:3px 7px;border-radius:3px;border:none;cursor:pointer;font-size:11px;background:transparent;color:#666;`;
+                rb.onclick = () => {
+                    if (ratingFilter === rk) { ratingFilter = null; }
+                    else { ratingFilter = rk; }
+                    for (const [k, v] of Object.entries(ratingBtns)) {
+                        v.style.background = ratingFilter === k ? rc : "transparent";
+                        v.style.color = ratingFilter === k ? "#fff" : "#666";
+                    }
+                    dpage = 1; loadDanbooru(dInp.value.trim(), 1);
+                };
+                ratingBtns[rk] = rb;
+                bottomBar.appendChild(rb);
+            }
+
             const favTab = document.createElement("button");
             favTab.textContent = "⭐ 收藏"; favTab.style.cssText = "padding:4px 8px;border-radius:3px;border:none;background:transparent;color:#888;cursor:pointer;font-size:11px;";
             favTab.onclick = () => {
@@ -201,7 +222,7 @@ app.registerExtension({
                 postGrid.innerHTML = '<div style="padding:30px;color:#888;width:100%;text-align:center;">⏳</div>';
                 postPageBar.style.display = "none";
                 try {
-                    const r = await fetch("/mooshie/danbooru/search", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag, page}) });
+                    const r = await fetch("/mooshie/danbooru/search", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({tag, page, rating: ratingFilter}) });
                     const d = await r.json(); posts = d.posts || [];
                     dInp.style.borderColor = posts.length ? "#0f3460" : "#e94560";
                 } catch { posts = []; }

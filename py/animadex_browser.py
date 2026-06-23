@@ -45,9 +45,11 @@ def _batch_search(mode, queries, limit=36):
 
 # ── D站 API ──
 
-def _danbooru_search(tag, page=1, limit=24):
+def _danbooru_search(tag, page=1, limit=24, rating=None):
     """搜索 D站帖子 — 与原版 search_posts 一致的 UA"""
     tags = tag.strip().lstrip("@")
+    if rating:
+        tags += f" rating:{rating}"
     params = {"tags": tags, "page": page, "limit": min(limit, 100)}
     try:
         r = _SESSION.get("https://danbooru.donmai.us/posts.json", params=params, timeout=10)
@@ -182,7 +184,8 @@ def register_routes():
             data = await request.json()
             tag = data.get("tag", "")
             page = int(data.get("page", 1))
-            posts, _count = _danbooru_search(tag, page)
+            rating = data.get("rating") or None
+            posts, _count = _danbooru_search(tag, page, rating=rating)
             # 简化返回，只返回前端需要的字段
             simplified = [{
                 "id": p["id"],
