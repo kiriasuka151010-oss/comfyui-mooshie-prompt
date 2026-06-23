@@ -56,7 +56,7 @@ app.registerExtension({
             topBar.append(topLabel, inp, sBtn);
 
             const artistGrid = document.createElement("div");
-            artistGrid.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;padding:6px;overflow-y:auto;max-height:260px;align-content:flex-start;";
+            artistGrid.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;padding:6px;overflow-y:auto;max-height:220px;align-content:flex-start;";
             const artistPageBar = document.createElement("div");
             artistPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
             topPanel.append(topBar, artistGrid, artistPageBar);
@@ -64,7 +64,7 @@ app.registerExtension({
 
             // ═══════════════ 下半：D站画廊 ═══════════════
             const bottomPanel = document.createElement("div");
-            bottomPanel.style.cssText = "flex:1;display:flex;flex-direction:column;min-height:0;";
+            bottomPanel.style.cssText = "flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;";
 
             const bottomBar = document.createElement("div");
             bottomBar.style.cssText = "display:flex;gap:6px;padding:6px 8px;align-items:center;border-bottom:1px solid #222;flex-shrink:0;";
@@ -149,7 +149,7 @@ app.registerExtension({
             bottomBar.append(dLabel, dInp, dBtn, favTab);
 
             const postGrid = document.createElement("div");
-            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:6px;columns:3;column-gap:4px;min-height:0;";
+            postGrid.style.cssText = "flex:1;overflow-y:auto;padding:4px;columns:3;column-gap:4px;min-height:0;";
             const postPageBar = document.createElement("div");
             postPageBar.style.cssText = "display:none;justify-content:center;gap:6px;padding:4px;font-size:10px;color:#888;flex-shrink:0;";
 
@@ -276,17 +276,16 @@ app.registerExtension({
 
             function renderCard(p, postData) {
                 const card = document.createElement("div");
-                card.style.cssText = `width:100%;background:#222;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #222"};box-sizing:border-box;margin-bottom:4px;break-inside:avoid;position:relative;`;
+                card.style.cssText = `width:100%;background:#222;border-radius:4px;overflow:hidden;cursor:pointer;border:${selectedPost===p.id?"2px solid #e94560":"1px solid #333"};box-sizing:border-box;margin-bottom:4px;break-inside:avoid;position:relative;`;
                 card.onclick = () => { if (!showFavorites) selectPost(postData); else selectFav(postData); };
-
-                // 双击大图
                 card.ondblclick = (e) => { e.stopPropagation(); showLargeImage(postData); };
 
                 const imgDiv = document.createElement("div");
-                imgDiv.style.cssText = "width:100%;background:#0d0d1a;display:flex;align-items:center;justify-content:center;";
+                imgDiv.style.cssText = "width:100%;line-height:0;background:#111;";
                 if (p.preview_url) {
                     const img = new Image(); img.style.cssText = "width:100%;height:auto;display:block;";
-                    img.src = "/mooshie/image?url=" + encodeURIComponent(p.preview_url);
+                    // 用 large_url 显示高清图，回退到 preview_url
+                    img.src = "/mooshie/image?url=" + encodeURIComponent(p.large_url || p.preview_url);
                     img.onerror = function() { this.style.display="none"; this.parentElement.textContent="🖼"; this.parentElement.style.fontSize="24px"; this.parentElement.style.color="#444"; };
                     imgDiv.appendChild(img);
                 } else { imgDiv.textContent = "🖼"; imgDiv.style.cssText += "font-size:24px;color:#444;"; }
